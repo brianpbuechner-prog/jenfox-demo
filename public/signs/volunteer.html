@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/signs/demo-api.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Sign pickup volunteers · Jen Fox for 41B</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap">
+<link rel="stylesheet" href="/signs/app.css">
+<style>
+.opt{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);background:var(--ground);margin-top:8px;cursor:pointer}
+.opt input{width:auto;margin:4px 0 0}
+.opt.off{opacity:.5;cursor:default}
+.opt:has(input:checked){border-color:var(--ink);background:var(--accent-soft)}
+.opt b{display:block}
+.yn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.yn .opt{margin-top:0;align-items:center}
+label.q{display:block;font-weight:600;margin:14px 0 6px}
+</style>
+</head>
+<body>
+<div class="demo-strip">Portfolio demo of the yard sign app. Every household, address and name here is made up, and nothing you tap is saved beyond this browser tab. <a href="/signs/">All screens</a> · <a href="/">Team site</a></div>
+<div class="bar"><div class="in"><div class="eyebrow">Jen Fox for Minnesota House 41B</div><h1>Help pick up yard signs</h1><div class="sub">Wednesday morning, Nov 4. Pick an area and we'll text you the details and your route link.</div></div></div>
+<div class="wrap" id="app">
+  <form class="card" id="f">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label for="name">Your name</label><input id="name" name="name" autocomplete="name" required></div><div><label for="phone">Cell phone</label><input id="phone" name="phone" inputmode="tel" autocomplete="tel" required></div></div>
+    <label class="q">Do you have room in your vehicle for large signs (4 ft by 2 ft) and the rebar stakes they're on?</label>
+    <div class="yn"><label class="opt"><input type="radio" name="large" value="Yes" required> Yes</label><label class="opt"><input type="radio" name="large" value="No"> No</label></div>
+    <label class="q">Where would you like to pick up?</label>
+    <div id="areas">
+      <label class="opt"><input type="radio" name="area" value="Hastings" required><span><b>Hastings</b></span></label>
+      <label class="opt"><input type="radio" name="area" value="Cottage Grove"><span><b>Cottage Grove</b></span></label>
+      <label class="opt"><input type="radio" name="area" value="Denmark Township"><span><b>Denmark Township</b><span class="small muted">Rural roads</span></span></label>
+      <label class="opt"><input type="radio" name="area" value="Anywhere"><span><b>Wherever you need me</b></span></label>
+    </div>
+    <p class="small muted" style="margin-top:8px">We'll split each area into routes once we know how many people are helping, then text you yours.</p>
+    <label for="notes" class="q">Anything we should know? <span class="muted" style="font-weight:400">(optional)</span></label>
+    <input id="notes" name="notes" placeholder="e.g. I'm riding with a friend, or I can only do a short route">
+    <input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+    <div class="acts" style="grid-template-columns:1fr"><button class="btn" id="submitBtn" type="submit">Sign me up</button></div>
+    <p class="err" id="err" style="display:none;margin-top:10px"></p>
+  </form>
+  <p class="small muted center">Paid for by Jen Fox for House. Questions: jenfoxforhouse@gmail.com</p>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+$('#f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const b = $('#submitBtn'), err = $('#err');
+  const body = Object.fromEntries(new FormData($('#f')).entries());
+  b.disabled = true; err.style.display = 'none';
+  try {
+    const r = await fetch('/api/volunteer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok){ err.textContent = j.error || 'Something went wrong.'; err.style.display = 'block'; b.disabled = false; return; }
+    const where = j.area === 'Anywhere' ? 'wherever we need help' : esc(j.area);
+    $('#app').innerHTML = `<div class="card center"><h2 style="font-size:1.2rem">Thank you!</h2><p>You're signed up for ${where}.</p><p class="small muted">We'll text you the details and a link to your route before Wednesday.</p></div>`;
+  } catch(_) { err.textContent = 'Could not reach the server. Check your connection and try again.'; err.style.display = 'block'; b.disabled = false; }
+});
+</script>
+</body>
+</html>

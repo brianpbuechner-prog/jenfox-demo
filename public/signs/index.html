@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yard sign app · demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap">
+<link rel="stylesheet" href="/signs/app.css">
+<style>
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.tile{display:block;padding:16px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none}
+.tile:hover{border-color:var(--ink)}
+.tile b{display:block;font-size:1.05rem;margin-bottom:4px}
+.tile span{font-size:.88rem;color:var(--muted)}
+.facts{margin:0;padding-left:18px;font-size:.92rem}
+.facts li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="demo-strip">Portfolio demo. Every household, address and name in these screens is made up. <a href="/">Back to the team site</a></div>
+<div class="bar"><div class="in"><div class="eyebrow">Jen Fox for House 41B</div><h1>Yard sign app</h1><div class="sub">Requests, delivery routes and the post-election pickup, in one app</div></div></div>
+<div class="wrap">
+  <div class="card">
+    <p class="lbl">What it did, Aug to Nov 2026</p>
+    <ul class="facts">
+      <li>Replaced competing spreadsheets with one list: requests from the website, phone and events landed in one place and were routed automatically.</li>
+      <li>Volunteers opened a route link on their phone, no sign-in: next stop, one-tap directions, Delivered or Picked up.</li>
+      <li>560 households had a Jen Fox sign by Election Day, and the same app ran the Nov 4 pickup across 41B.</li>
+    </ul>
+  </div>
+  <p class="lbl" style="margin:16px 4px 8px">Pickup edition, Nov 4</p>
+  <div class="grid">
+    <a class="tile" href="/signs/r/demo1"><b>Volunteer route</b><span>The phone screen a driver used: next stop, what to grab, Picked up / No sign there.</span></a>
+    <a class="tile" href="/signs/org.html"><b>Organizer view</b><span>Every route's progress, sending links, notes from drivers, find any household.</span></a>
+    <a class="tile" href="/signs/volunteer.html"><b>Volunteer signup</b><span>The public form drivers used to sign up for a pickup area.</span></a>
+  </div>
+  <p class="lbl" style="margin:16px 4px 8px">Delivery edition, Aug to Oct</p>
+  <div class="grid">
+    <a class="tile" href="/signs/signup.html"><b>Sign request form</b><span>The public form linked from the campaign website.</span></a>
+  </div>
+  <p class="small muted" style="margin-top:14px">Taps on these screens are kept in this browser tab only. <button class="btn ghost" style="padding:0" onclick="try{sessionStorage.clear()}catch{};location.reload()">Reset the demo</button></p>
+</div>
+</body>
+</html>

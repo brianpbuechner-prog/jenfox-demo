@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>HD41B Visual Brief</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap">
+<style>
+/* Layout: one narrow reading column of charts, section number rail on the left at desktop width, square corners everywhere. */
+:root{
+  --bg:#FFFFFF; --panel:#F5F5F5; --ink:#383838; --ink2:#6B6B6B; --rule:#DADADA; --mint:#87E0D3;
+  --fox:#1E9E8E; --fox2:#87E0D3; --gop:#383838; --gop2:#8E8E8E; --cg:#C9780A; --hast:#6E5FB0;
+  --neu:#7A7A7A; --neu2:#C4C4C4; --onmint:#383838;
+  --display:'Poppins','Trebuchet MS','Segoe UI',Arial,sans-serif;
+  --body:'Poppins','Trebuchet MS','Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#2B2B2B; --panel:#353535; --ink:#F2F2F2; --ink2:#B9B9B9; --rule:#4C4C4C; --mint:#87E0D3;
+  --fox:#87E0D3; --fox2:#4C9389; --gop:#9A9A9A; --gop2:#6A6A6A; --cg:#F0A93B; --hast:#A79BE0;
+  --neu:#D2D2D2; --neu2:#5C5C5C; --onmint:#2B2B2B; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#2B2B2B; --panel:#353535; --ink:#F2F2F2; --ink2:#B9B9B9; --rule:#4C4C4C; --mint:#87E0D3;
+  --fox:#87E0D3; --fox2:#4C9389; --gop:#9A9A9A; --gop2:#6A6A6A; --cg:#F0A93B; --hast:#A79BE0;
+  --neu:#D2D2D2; --neu2:#5C5C5C; --onmint:#2B2B2B; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;font-weight:400;
+  padding-inline:16px;padding-block:28px 64px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.wrap{max-width:860px;margin-inline:auto;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,6vw,44px);font-weight:700;line-height:1.1;letter-spacing:-.01em}
+h2{font-size:clamp(21px,3.6vw,27px);font-weight:700;line-height:1.2}
+h3{font-size:16px;font-weight:600;line-height:1.3}
+p{margin:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--fox);outline-offset:2px}
+.eyebrow{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--ink2)}
+header.top{display:flex;flex-direction:column;gap:14px;border-top:10px solid var(--mint);padding-top:22px}
+header.top .lede{font-size:16px;max-width:62ch}
+.internal{display:inline-block;align-self:flex-start;background:var(--ink);color:var(--bg);font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink2)}
+nav.toc a{text-decoration:none;border-bottom:1px solid var(--rule)}
+section{display:flex;flex-direction:column;gap:22px;scroll-margin-top:16px}
+.shead{display:flex;flex-direction:column;gap:8px;border-top:2px solid var(--ink);padding-top:14px}
+.shead .num{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--ink2)}
+.shead .point{max-width:65ch}
+h2.sub2{font-size:19px;border-top:1px solid var(--rule);padding-top:16px}
+.note{max-width:65ch;color:var(--ink)}
+figure.chart{margin:0;display:flex;flex-direction:column;gap:6px;break-inside:avoid;min-width:0}
+figure.chart .sub{font-size:12.5px;color:var(--ink2)}
+figure.chart .plot{margin-top:8px;min-width:0}
+figure.chart .cav{font-size:12px;color:var(--ink2);border-left:3px solid var(--mint);padding-left:10px;margin-top:8px;max-width:75ch}
+.pending{font-size:12.5px;color:var(--ink2);border:1px dashed var(--rule);padding:18px 12px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:28px}
+.two>*{min-width:0}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--panel);padding:14px 14px 12px;display:flex;flex-direction:column;gap:2px;border-top:4px solid var(--mint);min-width:0}
+.tile b{font-family:var(--display);font-weight:700;font-size:clamp(26px,5vw,34px);line-height:1.05;font-variant-numeric:tabular-nums}
+.tile span{font-size:12.5px;font-weight:600}
+.tile small{font-size:11.5px;color:var(--ink2);line-height:1.35}
+/* bars */
+.bars{display:flex;flex-direction:column;gap:9px;font-variant-numeric:tabular-nums}
+.bars .row{display:grid;grid-template-columns:minmax(0,11.5rem) minmax(0,1fr);gap:2px 12px;align-items:center}
+.bars.wide .row{grid-template-columns:minmax(0,15rem) minmax(0,1fr)}
+.bars .lab{font-size:12.5px;line-height:1.25;font-weight:600}
+.bars .lab small{display:block;font-weight:400;color:var(--ink2);font-size:11.5px}
+.bars .row.hl .lab{background:var(--mint);color:var(--onmint);padding:2px 6px}
+.bars .row.hl .lab small{color:var(--onmint)}
+.bars .stack{display:flex;flex-direction:column;gap:3px;min-width:0}
+.track{display:flex;align-items:center;gap:2px;height:20px;position:relative;min-width:0}
+.track.thin{height:13px}
+.seg{height:100%;flex:0 0 auto;transform-origin:left center;min-width:1px;position:relative}
+.seg em{position:absolute;inset:0;display:flex;align-items:center;padding-left:5px;font-style:normal;font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden}
+.track .v{font-size:12px;padding-left:6px;white-space:nowrap;flex:0 0 auto}
+.track .ref{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink)}
+.c-fox{background:var(--fox)} .c-fox2{background:var(--fox2)} .c-gop{background:var(--gop)} .c-gop2{background:var(--gop2)}
+.c-cg{background:var(--cg)} .c-hast{background:var(--hast)} .c-neu{background:var(--neu)} .c-neu2{background:var(--neu2)}
+.c-hatch{background:repeating-linear-gradient(135deg,var(--neu) 0 2px,var(--panel) 2px 6px);outline:1px solid var(--neu);outline-offset:-1px}
+.c-est{background:repeating-linear-gradient(135deg,var(--fox2) 0 3px,var(--bg) 3px 7px);outline:1.5px dashed var(--fox);outline-offset:-1.5px}
+.c-out{background:var(--bg);outline:1.5px solid var(--ink2);outline-offset:-1.5px}
+.c-fox em,.c-gop em,.c-hast em,.c-cg em,.c-neu em{color:var(--bg)} .c-fox2 em,.c-neu2 em,.c-gop2 em{color:var(--ink)}
+.c-hatch em,.c-est em,.c-out em{color:var(--ink);background:none}
+.key{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink2);margin-bottom:10px}
+.key i{display:inline-block;width:12px;height:12px;margin-right:5px;vertical-align:-1px}
+.key i.dot{border-radius:50%}
+/* dot rows */
+.dots{display:flex;flex-direction:column;gap:7px;font-variant-numeric:tabular-nums}
+.dots .row{display:grid;grid-template-columns:minmax(0,11.5rem) minmax(0,1fr);gap:2px 12px;align-items:center}
+.dots .lab{font-size:12.5px;line-height:1.25;font-weight:600}
+.dots .lab small{display:block;font-weight:400;color:var(--ink2);font-size:11.5px}
+.dots .row.hl .lab{background:var(--mint);color:var(--onmint);padding:2px 6px}
+.dots .row.hl .lab small{color:var(--onmint)}
+.dtrack{position:relative;height:24px;margin-inline:26px 30px;border-bottom:1px solid var(--rule)}
+.dtrack .rng{position:absolute;top:11px;height:3px;background:var(--neu2);transform-origin:left center}
+.dtrack .d{position:absolute;top:6px;width:13px;height:13px;margin-left:-6.5px;box-shadow:0 0 0 2px var(--bg)}
+.dtrack .d.round{border-radius:50%}
+.dtrack .d.tie{width:21px;height:21px;margin-left:-10.5px;top:2px}
+.dtrack .n{position:absolute;top:3px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.dtrack .n.l{transform:translateX(calc(-100% - 10px))} .dtrack .n.r{transform:translateX(10px)}
+.dtrack .tick{position:absolute;top:0;bottom:0;border-left:1px dotted var(--rule)}
+.daxis{position:relative;height:16px;margin-inline:26px 30px;font-size:10.5px;color:var(--ink2)}
+.daxis span{position:absolute;transform:translateX(-50%)}
+/* line svg */
+svg.line{display:block;width:100%;height:auto;overflow:visible;font-family:var(--body)}
+svg.line text{fill:var(--ink2);font-size:11px}
+svg.line text.strong{fill:var(--ink);font-weight:600}
+svg.line .grid{stroke:var(--rule);stroke-width:1}
+svg.line .axis{stroke:var(--ink2);stroke-width:1}
+svg.line .ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+svg.line .mark{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 4}
+/* tables */
+.tw{overflow-x:auto}
+table.plain{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+table.plain th,table.plain td{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+table.plain th{font-weight:600;font-size:11.5px;letter-spacing:.04em;color:var(--ink2)}
+table.plain td.num,table.plain th.num{text-align:right;padding-right:14px}
+/* forum grid */
+.chip{display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;margin:1px 3px 1px 0;background:var(--panel);border:1px solid var(--ink);line-height:1.3}
+.chip.o{border:1px dashed var(--ink2);font-weight:400;color:var(--ink2)}
+.chip.none{border:0;background:none;color:var(--ink2);font-weight:400;padding-left:0}
+table.forum td:first-child{width:28%}
+table.forum small{color:var(--ink2);display:block}
+/* blocks */
+.blocks{display:flex;flex-wrap:wrap;gap:18px 16px;align-items:flex-end}
+.blk{display:flex;flex-direction:column;gap:6px;min-width:0}
+.blk .sq{position:relative;outline:1.5px solid var(--ink2);outline-offset:-1.5px;background:var(--panel)}
+.blk .sq i{position:absolute;left:0;bottom:0;transform-origin:left bottom}
+.blk .t{font-size:12px;font-weight:600;line-height:1.25;max-width:150px}
+.blk .t small{display:block;font-weight:400;color:var(--ink2);font-size:11.5px}
+/* strips */
+.kn{font-size:12px}
+table.knock td,table.knock th{padding:4px 8px 4px 0}
+.sqm{display:inline-block;width:11px;height:11px;margin-right:6px;vertical-align:-1px}
+.sqm.on{background:var(--fox)} .sqm.off{outline:1.5px solid var(--ink2);outline-offset:-1.5px}
+.days{display:flex;gap:2px;align-items:flex-end;height:54px}
+.days .day{flex:1 1 0;min-width:0;height:14px;background:var(--neu2);position:relative}
+.days .day.ev{background:var(--fox);height:28px}
+.days .day.eday{background:var(--ink);height:40px}
+.days .day span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:10px;font-weight:600;white-space:nowrap;padding-bottom:2px}
+.daysax{display:flex;justify-content:space-between;font-size:11px;color:var(--ink2);margin-top:4px}
+.rec{position:relative;height:26px;background:var(--panel)}
+.rec i{position:absolute;top:0;bottom:0;transform-origin:left center}
+.recax{position:relative;height:30px;font-size:11px;color:var(--ink2)}
+.recax span{position:absolute;top:3px;white-space:nowrap}
+ol.find{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:12px;max-width:70ch}
+ol.find li::marker{font-weight:700}
+ul.plainlist{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:72ch;font-size:13.5px}
+h3.lh{margin-top:6px}
+details.audit{border:1px solid var(--rule);padding:10px 14px;font-size:12px}
+details.audit summary{cursor:pointer;font-weight:600}
+details.audit pre{white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.45;margin:10px 0 0;color:var(--ink2);font-family:ui-monospace,Menlo,Consolas,monospace}
+footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--rule);padding-top:14px}
+/* reveal: only when script confirms motion is allowed */
+.anim .chart:not(.in) .seg,.anim .chart:not(.in) .rng,.anim .chart:not(.in) .rec i{transform:scaleX(0)}
+.anim .chart:not(.in) .d,.anim .chart:not(.in) .n,.anim .chart:not(.in) .track .v,.anim .chart:not(.in) .blk .sq i{opacity:0}
+.anim .chart:not(.in) .blk .sq i{transform:scale(0)}
+.anim .chart:not(.in) svg.line .ln{stroke-dashoffset:1}
+.anim .chart:not(.in) svg.line .pt,.anim .chart:not(.in) svg.line .lbl{opacity:0}
+.anim .seg,.anim .rng,.anim .rec i{transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+.anim .d,.anim .n,.anim .track .v{transition:opacity .5s .5s}
+.anim .blk .sq i{transition:transform .9s cubic-bezier(.2,.7,.2,1),opacity .3s}
+.anim svg.line .ln{stroke-dasharray:1;stroke-dashoffset:0;transition:stroke-dashoffset 1.6s ease-out}
+.anim svg.line .pt,.anim svg.line .lbl{transition:opacity .5s 1.1s}
+.two .bars .row,.two .dots .row{grid-template-columns:minmax(0,1fr)}
+.c-hatch em,.c-est em{inset:auto;left:4px;top:50%;transform:translateY(-50%);background:var(--bg);padding:0 4px;line-height:1.5}
+.dots.wide .row{grid-template-columns:minmax(0,15rem) minmax(0,1fr)}
+@media (max-width:560px){
+  .bars .row,.bars.wide .row,.dots .row{grid-template-columns:minmax(0,1fr)}
+  .seg em{display:none}
+  body{font-size:14.5px}
+}
+@media print{
+  body{padding-block:0;font-size:11.5pt}
+  .wrap{gap:28px;max-width:none}
+  nav.toc{display:none}
+  .anim .chart .seg,.anim .chart .rng,.anim .chart .rec i,.anim .chart .blk .sq i{transform:none!important;transition:none!important}
+  .anim .chart .d,.anim .chart .n,.anim .chart .v,.anim .chart .pt,.anim .chart .lbl,.anim .chart .blk .sq i{opacity:1!important;transition:none!important}
+  .anim .chart svg.line .ln{stroke-dasharray:none!important;stroke-dashoffset:0!important;transition:none!important}
+  section{break-inside:auto} h2,h3,.shead{break-after:avoid}
+  details.audit{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="top">
+  <span class="internal">Portfolio demo</span>
+  <p class="note">Portfolio demo of the campaign's State of the Race brief. Results, money, signs, web and email figures are real; field figures are sample values.</p>
+  <p class="eyebrow">Jen Fox for House · Minnesota House 41B · Election 3 Nov 2026</p>
+  <h1>HD41B State of the Race, in charts</h1>
+  <p class="lede">A visual read of the campaign's State of the Race brief, kept from 30 Sep through the 3 Nov result. Each chart carries the date of its own read. Everything below the Result section is the pre-election brief as it stood in late October. Nothing here is a forecast.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#sR">Result</a><a href="#s1">1 Where things stand</a><a href="#s2">2 The race</a><a href="#s2a">2a Forums</a><a href="#s3">3 Past cycles</a><a href="#s4">4 Ticket splitting</a><a href="#s5">5 Turnout</a><a href="#s6">6 Money</a><a href="#s8">7 Field</a><a href="#s9">8 Visibility</a><a href="#s10">9 Digital</a><a href="#s11">10 Calendar</a><a href="#s12">11 Findings</a><a href="#s14">12 Sources</a>
+  </nav>
+</header>
+
+<section id="sR">
+  <div class="shead"><span class="num">Read first</span><h2 data-home>Jen won 41B, 11,363 to 9,656</h2>
+  <ul class="plainlist">
+    <li><b>Unofficial.</b> MN Secretary of State precinct files, last updated 4 Nov 10:48 AM. Certified by the State Canvassing Board on 19 Nov. 54.0% to 45.9%, 33 write-ins, all 15 precincts.</li>
+    <li><b>Turnout.</b> 21,052 votes in the House race against 24,598 in 2024, a midterm against a presidential year. The governor race drew 21,234 ballots in 41B.</li>
+    <li><b>The pre-election estimate was low.</b> The 26 Oct review put Jen near 50.8% two-way, margin about +330, one-sigma range 48.0% to 53.5%. She got 54.1% two-way and +1,707, above the top of that range.</li>
+  </ul></div>
+  <h2 class="sub2">1. A 2,217-vote swing from 2024, on 3,546 fewer ballots</h2>
+  <p class="point">2024 was Dippel by 510. The margin moved 10.2 points, from &minus;2.1 to +8.1. Hastings went from &minus;581 to +513, Cottage Grove from +361 to +1,376, Denmark and Nininger from &minus;290 to &minus;182. Five precincts flipped: Cottage Grove P-7 and Hastings W-2 P-3, W-3 P-1, W-3 P-2 and W-4 P-2.</p>
+  <h2 class="sub2">2. Jen ran ahead of every DFL candidate on the 41B ballot</h2>
+  <figure class="chart"><h3>DFL margin in the same 15 precincts</h3><p class="sub">MN SOS precinct files, 3 Nov 2026, unofficial.</p>
+  <table class="plain"><thead><tr><th>Race</th><th class="num">DFL votes</th><th class="num">DFL margin</th></tr></thead><tbody>
+  <tr><td>House 41B, Fox</td><td class="num">11,363</td><td class="num">+1,707</td></tr>
+  <tr><td>US House, Little</td><td class="num">11,189</td><td class="num">+1,306</td></tr>
+  <tr><td>Governor, Klobuchar</td><td class="num">11,070</td><td class="num">+1,284</td></tr>
+  <tr><td>State Senate 41, Seeberger</td><td class="num">10,821</td><td class="num">+553</td></tr>
+  <tr><td>US Senate, Flanagan</td><td class="num">10,446</td><td class="num">+319</td></tr>
+  </tbody></table>
+  <p class="cav">Jen's margin was 2.1 points above Klobuchar's in 41B. She ran furthest ahead of the governor's margin in the most Republican precincts: Nininger +6.2 points, Denmark and Hastings W-1 P-2 +4.3, W-3 P-2 +4.1. In Cottage Grove she ran within a point or two of the governor, so the Cottage Grove swing was mostly the whole ticket moving.</p></figure>
+  <h2 class="sub2">3. The swing was broad</h2>
+  <figure class="chart"><h3>Results by precinct, with the 2024 margin and delivered sign households</h3><p class="sub">Margins in points of the House vote. Signs: Delivered households in the sign app, placed in precincts by their coordinates against the SOS precinct map (524 inside 41B; 30 delivered rows have no coordinates).</p>
+  <table class="plain"><thead><tr><th>Precinct</th><th class="num">Fox</th><th class="num">Beck</th><th class="num">Margin</th><th class="num">Pts 2026</th><th class="num">Pts 2024</th><th class="num">Swing</th><th class="num">Signs</th></tr></thead><tbody>
+<tr><td>Cottage Grove P-3</td><td class="num">1,056</td><td class="num">689</td><td class="num">+367</td><td class="num">+21.0</td><td class="num">+8.9</td><td class="num">+12.1</td><td class="num">14</td></tr>
+<tr><td>Cottage Grove P-4</td><td class="num">1,353</td><td class="num">963</td><td class="num">+390</td><td class="num">+16.8</td><td class="num">+3.8</td><td class="num">+13.0</td><td class="num">48</td></tr>
+<tr><td>Cottage Grove P-5</td><td class="num">1,764</td><td class="num">1,359</td><td class="num">+405</td><td class="num">+12.9</td><td class="num">+2.2</td><td class="num">+10.7</td><td class="num">58</td></tr>
+<tr><td>Cottage Grove P-7</td><td class="num">772</td><td class="num">558</td><td class="num">+214</td><td class="num">+16.0</td><td class="num">&minus;0.4</td><td class="num">+16.4</td><td class="num">25</td></tr>
+<tr><td>Hastings W-1 P-1</td><td class="num">694</td><td class="num">561</td><td class="num">+133</td><td class="num">+10.6</td><td class="num">+2.3</td><td class="num">+8.3</td><td class="num">34</td></tr>
+<tr><td>Hastings W-1 P-2</td><td class="num">586</td><td class="num">704</td><td class="num">&minus;118</td><td class="num">&minus;9.1</td><td class="num">&minus;14.1</td><td class="num">+5.0</td><td class="num">19</td></tr>
+<tr><td>Hastings W-2 P-2</td><td class="num">635</td><td class="num">543</td><td class="num">+92</td><td class="num">+7.8</td><td class="num">+0.4</td><td class="num">+7.4</td><td class="num">19</td></tr>
+<tr><td>Hastings W-2 P-3</td><td class="num">768</td><td class="num">615</td><td class="num">+153</td><td class="num">+11.0</td><td class="num">&minus;1.0</td><td class="num">+12.0</td><td class="num">56</td></tr>
+<tr><td>Hastings W-3 P-1</td><td class="num">748</td><td class="num">645</td><td class="num">+103</td><td class="num">+7.4</td><td class="num">&minus;4.2</td><td class="num">+11.6</td><td class="num">48</td></tr>
+<tr><td>Hastings W-3 P-2</td><td class="num">700</td><td class="num">631</td><td class="num">+69</td><td class="num">+5.2</td><td class="num">&minus;3.0</td><td class="num">+8.2</td><td class="num">61</td></tr>
+<tr><td>Hastings W-4 P-1</td><td class="num">862</td><td class="num">937</td><td class="num">&minus;75</td><td class="num">&minus;4.2</td><td class="num">&minus;9.7</td><td class="num">+5.5</td><td class="num">85</td></tr>
+<tr><td>Hastings W-4 P-2</td><td class="num">830</td><td class="num">675</td><td class="num">+155</td><td class="num">+10.3</td><td class="num">&minus;3.9</td><td class="num">+14.2</td><td class="num">29</td></tr>
+<tr><td>Denmark Twp P-1</td><td class="num">394</td><td class="num">457</td><td class="num">&minus;63</td><td class="num">&minus;7.4</td><td class="num">&minus;15.4</td><td class="num">+8.0</td><td class="num">16</td></tr>
+<tr><td>Nininger Twp</td><td class="num">200</td><td class="num">319</td><td class="num">&minus;119</td><td class="num">&minus;22.9</td><td class="num">&minus;25.2</td><td class="num">+2.3</td><td class="num">12</td></tr>
+  </tbody></table>
+  <p class="cav">Hastings W-2 P-1 (Washington County, one vote) is left out. Sign households per 1,000 votes show no visible link to the swing across 14 precincts (correlation &minus;0.18); the precincts with the most signs per vote are Hastings W-4 P-1 and W-3 P-2, and they swung less than average. Too few precincts to say more.</p></figure>
+  <h2 class="sub2">4. What we learned</h2>
+  <ul class="plainlist">
+    <li><b>Republican drop-off decided it.</b> Jen kept 95% of her 2024 vote (11,363 against 12,019); Beck got 77% of Dippel's (9,656 against 12,529). Switching against staying home is unknown until voter history loads.</li>
+    <li><b>About 420 votes look like Jen's own:</b> her margin over Klobuchar's in the same precincts.</li>
+    <li><b>Her edge was biggest in Republican areas</b> (Nininger +6.2 points over Klobuchar's margin, Denmark and W-1 P-2 +4.3), which suggests crossover voters (inference).</li>
+    <li><b>Dippel is still strong locally.</b> He ran about 1,150 votes ahead of Beck in 41B.</li>
+    <li><b>The swing was broad.</b> Every precinct moved toward Jen, by 2 to 16.5 points, so no single program explains it.</li>
+    <li><b>The estimate missed by about 1,400 votes.</b> Next cycle, check the environment assumption against down-ballot results.</li>
+  </ul>
+  <p class="point">Everything below this section is the pre-election brief as it stood in late October, kept as the record.</p>
+</section>
+
+<section id="s1">
+  <div class="shead"><span class="num">Section 1</span><h2>Where things stand</h2>
+  <p class="note">Field figures in this section are sample values.</p>
+  <p class="point">The campaign has knocked more doors than at this point in 2024 and is reaching voters at the same rate. The seat's history says that does not settle it.</p></div>
+  <figure class="chart"><h3>The headline counts, 2 Nov</h3><p class="sub">Field counts are sample values. Margin from the Secretary of State; signs from the sign app and subscribers from Wix, read 1 Nov 2026.</p>
+    <div class="plot" data-chart="tiles_main"></div>
+    <p class="cav">Days left is counted from 2 Nov. Attempts count contacts tried, not distinct people. Supporter IDs are not a poll. Signs count households: 560 of them carry 578 signs.</p></figure>
+  <figure class="chart"><h3>Three days out, door conversations ran about a third ahead of 2024</h3><p class="sub">Door attempts and conversations, 1 Jan to three days before each election. Sample values.</p>
+    <div class="plot" data-chart="pace"></div>
+    <p class="cav">Doors only, so bulk email is left out of both years. The values are samples that keep the shape of the real comparison.</p></figure>
+</section>
+
+<section id="s2">
+  <div class="shead"><span class="num">Section 2</span><h2>The race</h2>
+  <p class="point">41B has no incumbent, both parties list it as a top target, and the Minnesota House has 67 DFL members, 66 Republicans and one vacancy (21A, vacant since 21 June 2026). Statewide polls narrowed in September.</p></div>
+  <div class="two">
+  <figure class="chart"><h3>Governor's race: the DFL lead went from 16 points in August to 2 and 7 in mid September</h3><p class="sub">Statewide polls, newest first. Percent of respondents. Checked against pollster releases.</p>
+    <div class="plot" data-chart="polls_gov"></div>
+    <p class="cav">LV is likely voters, RV is registered voters. TIPP appears twice because both of its figures circulate: 47 to 37 is its registered-voter cut and 50 to 40 its likely-voter cut. InsiderAdvantage asked no governor question. RealClearPolitics average on 30 Sep: DFL +8.0.</p></figure>
+  <figure class="chart"><h3>US Senate: within two points in three September polls</h3><p class="sub">Statewide polls, newest first. Percent of respondents.</p>
+    <div class="plot" data-chart="polls_sen"></div>
+    <p class="cav">Quantus and Deep Root (a Republican firm) were not checked against a release and rest on aggregators and news reports. RealClearPolitics average on 30 Sep: DFL +1.6, rated Toss Up then (all three raters had it at Lean D by late October). No public poll of 41B exists. In 2022 and 2024 the DFL ran 2.4 to 3.2 points worse in 41B than statewide at the top of the ticket.</p></figure>
+  </div>
+  <figure class="chart"><h3>Outside money in 41B leans DFL, but $61,135 has now been spent against Fox. In SD41 it runs the other way</h3><p class="sub">Spenders' pre-general reports, 1 Jan to 19 Oct 2026, read 27 Oct. Dollars spent for and against each candidate.</p>
+    <div class="plot" data-chart="ie_pairs"></div>
+    <p class="cav">Sums of the independent expenditure lines in each spender's own report. HRCC files its anti-Fox lines under an old Fox committee id (15594), which is why the board's by-candidate page showed nothing against her. For Fox includes $13,213 from three spenders not re-read since 15 Sep. Beck also has $41,295 of HRCC TV and cable reported as coordinated spending, not as independent expenditures. Every 41B voter is inside SD41.</p></figure>
+</section>
+
+<section id="s2a">
+  <h2 class="sub2">2a. The forums</h2>
+  <p class="note">Two forums, no rebuttals in either, and no direct attack between Fox and Beck in either. Water was the shared top issue in Hastings.</p>
+  <figure class="chart"><h3>Both recordings have small audiences so far</h3><p class="sub">YouTube view counts read the morning of 1 Oct 2026.</p>
+    <div class="plot" data-chart="tiles_forum"></div>
+    <p class="cav">The LWV forum ran 59 minutes with all six SD41, 41A and 41B candidates. The Hastings forum ran 58 minutes, 41B then SD41, five questions each.</p></figure>
+  <figure class="chart"><h3>The Hastings recording: 15 minutes of 41B, then the sharp SD41 exchange</h3><p class="sub">Hastings forum recording, 30 Sep, minutes from start. Segment times from the machine transcript.</p>
+    <div class="plot" data-chart="forum_rec"></div>
+    <p class="cav">Timestamps are approximate. The LWV forum was 15 Sep, the Hastings Chamber and AAUW forum 30 Sep. In the SD41 segment Seeberger said Dippel "won't even give me his phone number" and refused to sign the jackets on her Hastings bonding bill. Dippel called that "a baseless attack" and ran the affordability case against her as "the deciding vote" on car tab fees, a gas tax increase, mandates and paid family leave.</p></figure>
+  <figure class="chart"><h3>LWV forum, 15 Sep: which themes each answer raised</h3><p class="sub">Coded for this brief from the doc's LWV table and the auto-caption transcript. Solid chips are the eight tracked themes. Dashed chips are other topics.</p>
+    <div class="plot" data-chart="grid_lwv"></div>
+    <p class="cav">The coding is this brief's, not a figure in the doc. An answer counts toward a theme when the candidate makes a point about it or names it as a priority. A passing word does not count. The closing row comes from the transcript only. Fox's opening is counted for affordability on her transcript lines about working families and affordable water and health care; the doc's own summary of that answer lists water, education and health care. The transcript is YouTube auto-captions and garbles names, so quotes should be checked against the video before use.</p></figure>
+  <figure class="chart"><h3>Hastings forum, 30 Sep: which themes each answer raised</h3><p class="sub">Coded for this brief from the doc's Hastings table and the Whisper transcript. 41B segment 14:36 to 29:49.</p>
+    <div class="plot" data-chart="grid_hast"></div>
+    <p class="cav">Same coding rule as above. The transcript is a machine transcript with approximate timestamps and machine-spelled names.</p></figure>
+  <figure class="chart"><h3>Across both forums Beck returned to fraud and schools more often. Both spent the most answers on affordability and taxes</h3><p class="sub">Count of answers that raised each theme, out of 17 answers per candidate (10 at LWV, 7 in Hastings).</p>
+    <div class="plot" data-chart="themes"></div>
+    <p class="cav">A count from this brief's coding of the two grids above, not a figure in the doc. One answer can count toward several themes. Beck's lightning-round word "accountability" is not counted as fraud. Guns, immigration and elections each came up once because the LWV moderator asked about them.</p></figure>
+</section>
+
+<section id="s3">
+  <div class="shead"><span class="num">Section 3</span><h2>Past cycles</h2>
+  <p class="point">The Republican margin on this turf fell from 21 points in 2014 to about 2 points in 2018, 2022 and 2024. It has not crossed zero.</p></div>
+  <figure class="chart"><h3>Three of the last four House races here were decided by about two points</h3><p class="sub">Republican margin in the House race, percentage points, 2012 to 2024. Secretary of State files; 2012 and 2014 from the University of Minnesota election archive.</p>
+    <div class="plot" data-chart="margin"></div>
+    <p class="cav">2012 to 2020 are House District 54B, which had different lines (it included Afton and a different set of Cottage Grove precincts), drawn lighter. Compare the trend, not the raw votes. 2012 and 2014 were not checked against Secretary of State files. The 2024 certified margin was 510 votes: Dippel 12,529, Fox 12,019.</p></figure>
+  <figure class="chart"><h3>In 2024 Fox carried Cottage Grove by 361 and lost the rest by 871</h3><p class="sub">2024 House 41B result by area, votes. Secretary of State precinct files.</p>
+    <div class="plot" data-chart="area2024"></div>
+    <p class="cav">The rest of the district is the nine Hastings precincts plus Nininger and Denmark townships. Its vote totals are derived by subtraction from the district totals (12,019 and 12,529); the doc states the 361 and 871 margins directly.</p></figure>
+</section>
+
+<section id="s4">
+  <div class="shead"><span class="num">Section 4</span><h2>Ticket splitting</h2>
+  <p class="point">Statewide DFL candidates have carried 41B in both cycles on these lines while the DFL House candidate lost. The House share barely moved when the top of the ticket did.</p></div>
+  <figure class="chart"><h3>Same voters, same ballot: the DFL Senate candidate won 41B by 2,765 in 2024 while Fox lost it by 510</h3><p class="sub">Vote share inside 41B by race, percent. Sums of the 15 precincts, Secretary of State precinct files.</p>
+    <div class="plot" data-chart="split"></div>
+    <p class="cav">House rows are highlighted. DFL House two-way share was 48.91% in 2022 and 48.96% in 2024 while the top of the ticket moved from 49.89% (2022 governor's race) to 47.96% (2024 presidential race). This brief now uses two-way shares, as elsewhere in this brief; as shares of all House votes including write-ins the figures are 48.86% and 48.87%, and an earlier version had those two swapped. Two cycles is a thin basis. The 2024 Senate race had a weak Republican nominee, so its 2024 margin in 41B says little about 2026.</p></figure>
+</section>
+
+<section id="s5">
+  <div class="shead"><span class="num">Section 5</span><h2>Turnout</h2>
+  <p class="point">The last governor-year electorate in 41B was 19,403 voters, 5,841 fewer than in 2024.</p></div>
+  <figure class="chart"><h3>A governor-year electorate is about a quarter smaller than a presidential one</h3><p class="sub">Total voting in 41B, 2022 and 2024, with the doc's 2026 estimate. Secretary of State turnout statistics.</p>
+    <div class="plot" data-chart="turnout"></div>
+    <p class="cav">The 2026 bar is an estimate: each precinct's 2022 turnout rate applied to its 1 Jun 2026 registration. It is a floor for Cottage Grove, where registration is still growing. At that volume 50% of the two-way House vote is roughly 10,400 to 10,450 votes, also an estimate. The doc gives no 41B turnout total for 2018, so 2018 is not drawn.</p></figure>
+  <div class="two">
+  <figure class="chart"><h3>In 2022 Cottage Grove turned out four points below the rest</h3><p class="sub">2022 turnout as a share of 7 a.m. registration.</p>
+    <div class="plot" data-chart="cg_gap"></div>
+    <p class="cav">In 2024 the two were within a point of each other. On June registration, a 4.2 point gap is about 510 Cottage Grove voters.</p></figure>
+  <figure class="chart"><h3>Primary participation rose 8% on 2022</h3><p class="sub">Party ballots cast in 41B, August primaries in governor years.</p>
+    <div class="plot" data-chart="primary"></div>
+    <p class="cav">Total participation only. Party share is not shown because which party had the contested primary flipped between the two years. Registration grew faster than this over the same span, so the doc reads neither the total nor the party split as a signal for November.</p></figure>
+  </div>
+</section>
+
+<section id="s6">
+  <div class="shead"><span class="num">Section 6</span><h2>Money</h2>
+  <p class="point">On 19 Oct Fox held about five times Beck's cash. Outside groups have reported $61,135 against Fox, nearly all of it HRCC mail, radio and digital, filed under an old Fox committee id so the board's by-candidate page does not show it. Spending against Beck is larger, $224,372.</p></div>
+  <figure class="chart"><h3>Fox raised about 50% more than Beck, and $41,295 of Beck's total is HRCC TV</h3><p class="sub">Candidate committees, 1 Jan to 19 Oct 2026, dollars. Pre-general reports, read 27 Oct (Beck as amended 23 Oct).</p>
+    <div class="plot" data-chart="cand_money"></div>
+    <p class="cav">Raised and spent include in-kind: Fox $569, Beck $41,603, almost all of it HRCC's TV and cable for him ($40,020 on 5 Oct), which HRCC reports as approved spending for Beck. The dashed lines are the two-year spending limits on the board's pages (Fox $84,200, Beck $92,620 as a first-time candidate), drawn against campaign spending only: under Minn. Stat. 10A.25 the limit covers campaign and approved expenditures, not noncampaign disbursements (Fox $3,787) or contributions to party units (Fox $5,000). Counting the $31.25 of 2025 campaign spending from the 2025 year-end report, Fox had $14,531 of room on 19 Oct. Public subsidy: Fox $7,674.62, Beck $6,427.83. No more full reports are due before Election Day; contributions over $500 show up as next-day notices (Beck filed one, $1,000 from a Republican senate district unit, on 21 Oct).</p></figure>
+  <div class="two">
+  <figure class="chart"><h3>Through 15 Sep, outside spending is less than half of 2024's</h3><p class="sub">Independent expenditures in 41B through 15 Sep of each cycle, dollars, by side.</p>
+    <div class="plot" data-chart="ie_sep"></div>
+    <p class="cav">DFL side means spending for the DFL candidate plus spending against the Republican. Itemized rows over $200 only. The 2026 Republican side now includes three HRCC mailers against Fox ($11,883) that the 15 Sep file missed because HRCC filed them under an old Fox committee id; the 2024 figures may have the same gap (HRCC used that id for $145,254 against Fox in 2024) and were not re-checked.</p></figure>
+  <figure class="chart"><h3>In 2024, 82% of outside money arrived after 15 Sep</h3><p class="sub">Independent expenditures in 41B, full year, dollars, by side.</p>
+    <div class="plot" data-chart="ie_full"></div>
+    <p class="cav">Of the 2024 Republican-side spenders (Make Liberty Win, Pro Jobs Majority, MN Jobs Coalition, Renew Minnesota, Americans for Prosperity Action), only Renew Minnesota had reported 41B spending by 19 Oct ($2,400 against Fox). The MN Jobs Coalition fund began Meta ads naming Fox on 24 Oct, after the report period. HRCC is this year's main Republican-side spender in 41B.</p></figure>
+  </div>
+  <figure class="chart"><h3>Who has spent in 41B so far in 2026</h3><p class="sub">Independent expenditures by spender through 19 Oct 2026, dollars, from each spender's pre-general report.</p>
+    <div class="plot" data-chart="spenders"></div>
+    <p class="cav">HRCC reports every anti-Fox line under "Registered Id 15594", an old Fox committee id, so the board's page for Fox (19059) shows none of it; through 15 Sep it was $11,883, through 19 Oct $58,735. Three small pro-Fox spenders (DFL State Central, MN AFL-CIO, AFSCME) were not re-read and keep their 15 Sep amounts. The Minnesota Jobs Coalition fund had not posted its report on the morning of 27 Oct.</p></figure>
+</section>
+
+<section id="s8">
+  <div class="shead"><span class="num">Section 7</span><h2>Field</h2>
+  <p class="note">Field figures in this section are sample values.</p>
+  <p class="point">About 44,000 attempts and 10,000 conversations this year. Through 30 Sep the conversation rate matched 2024 once 2024's bulk emails are set aside.</p></div>
+  <figure class="chart"><h3>The 2024 rate gap was bulk email</h3><p class="sub">Attempts by contact type, 1 Jan to 30 Sep of each year. Sample values.</p>
+    <div class="plot" data-chart="types"></div>
+    <p class="cav">The field tool counts every bulk email as a conversation, which lifts the 2024 rate from about 22% to 30%. Set aside, the door rate is about the same in both years. No text messages are shown in either year.</p></figure>
+  <figure class="chart"><h3>2026 ran ahead in June and July and behind in August</h3><p class="sub">Attempts by month, all contact types, with conversations in the label. 2024 doors are split out for September to November. Sample values.</p>
+    <div class="plot" data-chart="months"></div>
+    <p class="cav">The 2024 all-types figures carry bulk emails. Nobody knocked in the final five days of 2024: every attempt in those days was bulk email or other non-door contact.</p></figure>
+  <figure class="chart"><h3>Weekly attempts peaked at the turn of October</h3><p class="sub">Attempts by week, 31 Aug to 31 Oct 2026. Doors and phones. Sample values.</p>
+    <div class="plot" data-chart="weeks"></div>
+    <p class="cav">Phones are all contact types minus doors. Conversations are in the label under each week.</p></figure>
+  <div class="two">
+  <figure class="chart"><h3>A handful of canvassers logged most attempts</h3><p class="sub">Share of 2026 attempts by the top canvassers, 1 Jan to 30 Sep. Sample values.</p>
+    <div class="plot" data-chart="canv"></div>
+    <p class="cav">Shares of all contact types. No canvasser is named.</p></figure>
+  <figure class="chart"><h3>The Washington County side converts at a lower rate</h3><p class="sub">2026 attempts and conversations by county, all contact types, 1 Jan to 31 Oct. Sample values.</p>
+    <div class="plot" data-chart="county"></div>
+    <p class="cav">Dakota is Hastings and Nininger. Washington is Cottage Grove and Denmark.</p></figure>
+  </div>
+  <h2 class="sub2">Early vote</h2>
+  <div class="two">
+  <figure class="chart"><h3>About 2,800 applications and 7,000 ballots by 2 Nov</h3><p class="sub">Early vote in 41B, count of people. Sample values.</p>
+    <div class="plot" data-chart="ev_trend"></div>
+    <p class="cav">For scale, 41B cast 5,126 early ballots in all of 2022 and 10,819 in 2024 (Secretary of State). Ballots overtook applications after in-person early voting widened on 16 Oct.</p></figure>
+  <figure class="chart"><h3>Cottage Grove leads on early vote per registered voter</h3><p class="sub">Early vote by place, 2 Nov. Applications and ballots cast. Sample values.</p>
+    <div class="plot" data-chart="ev_place"></div>
+    <p class="cav">The Hastings and Nininger row is Dakota County. Denmark Township is Washington County minus Cottage Grove.</p></figure>
+  </div>
+  <figure class="chart"><h3>Early vote by precinct</h3><p class="sub">2 Nov, count of people, against each precinct's 2022 early ballots and 2022 turnout. Fox 2024 and 2022 early are from the Secretary of State; the other columns are sample values.</p>
+    <div class="plot" data-chart="ev_prec_tbl"></div>
+    <p class="cav">By mail is ballots cast minus in-person early votes. Ballots out is an application with no ballot back. Hastings W-2 P-1 (one voter) is in the district row only.</p></figure>
+  <figure class="chart"><h3>Election Day polling places</h3><p class="sub">Where each 41B precinct votes on Tue 3 Nov, 7 am to 8 pm.</p>
+    <div class="plot" data-chart="poll_tbl"></div>
+    <p class="cav">All eight Hastings precincts vote where they did in 2024. Cottage Grove, Nininger and Denmark were read for 2026 only; no published 2024 list was found to compare. Early voting at Hastings City Hall runs to Mon 2 Nov, with longer hours Tue 27 Oct (8 am to 7 pm), Sat 31 Oct and Sun 1 Nov (9 am to 3 pm) and Mon 2 Nov (8 am to 5 pm), per the city's elections page.</p></figure>
+</section>
+
+<section id="s9">
+  <div class="shead"><span class="num">Section 8</span><h2>Visibility</h2>
+  <p class="point">560 households have a sign as of 26 Oct, carrying 578 signs, and one request is open. By precinct, Cottage Grove holds 145 of the 524 delivered households inside 41B (27.7%, up from 23.5% on 30 Sep).</p></div>
+  <figure class="chart"><h3>Two Hastings precincts hold more signs than all of Cottage Grove</h3><p class="sub">Delivered households inside 41B by precinct, 26 Oct, ordered by count. Sign app coordinates tested against the SOS precinct polygons of 18 Sep 2026.</p>
+    <div class="plot" data-chart="signs"></div>
+    <p class="cav">524 of 560 delivered households map inside 41B. 30 have no coordinates and 6 sit outside the district; both are left out. Hastings W-2 P-1, a one-voter sliver, has none. Counts are households; those 524 households hold 541 signs. By the city field in the sign app, 391 delivered households are in Hastings, 153 in Cottage Grove, 13 in Denmark Township and 3 have no city.</p></figure>
+  <div class="two">
+  <figure class="chart"><h3>Delivered signs rose from 379 on 4 Sep to 560 on 26 Oct, unchanged through 1 Nov</h3><p class="sub">Sign app, delivered households on nine dates.</p>
+    <div class="plot" data-chart="sign_trend"></div>
+    <p class="cav">237 older deliveries carry no date because they came from the earlier tracker. On 13 Oct the app read 511 delivered and 46 to deliver (43 in Hastings, 3 rural), and Cottage Grove was 149 of the 511 (29%). No requests were open beyond the one shown on 26 Oct.</p></figure>
+  </div>
+</section>
+
+<section id="s10">
+  <div class="shead"><span class="num">Section 9</span><h2>Digital</h2>
+  <p class="point">Website traffic tripled on 16 Sep, the day paid ads started, and fell back through the first half of October. The week of 19 Oct was up 30% (402 sessions against 310), the best week since late September, with no newsletter on its two biggest days. The site still produces almost no form signups. The email list is small, steady and well read.</p></div>
+  <figure class="chart"><h3>Daily sessions went from about 25 to about 78 after paid ads began, fell to about 39 a day in mid-October, and ran 48 to 58 a day in the last week of October</h3><p class="sub">jenfoxforhouse.com daily sessions, 1 Aug to 31 Oct 2026 (Chicago time). Wix Analytics API, daily file in the project folder, read 1 Nov.</p>
+    <div class="plot" data-chart="sessions"></div>
+    <p class="cav">Meta ads and Simpli.fi display first appear on 16 Sep, Google Ads search on 20 Sep. Window averages: August 24 a day, 1 to 15 Sep 25, 16 to 30 Sep 78, 1 to 4 Oct 54 (four days). 2, 3 and 4 Oct are the three lowest days since 15 Sep. The campaign's Meta ad that started 16 Sep ended 29 Sep, and its 30 Sep replacement showed no spend when the Ad Library was read on 1 Oct. 30 Sep reads 104 on 5 Oct and read 102 on the day. Who runs the Simpli.fi and Google Ads buys is not known. 6 to 12 Oct: 273 sessions, 39 a day, the second straight down week (468 the week before, 631 the week of 22 Sep). 12 Oct, the Issue 7 send day, was the lowest day since 15 Sep. No ad appears to be running. Zero Wix form submissions for four weeks. 19 to 25 Oct: 402 sessions and 362 visitors, zero form submissions; 21 and 22 Oct (79 and 77) were the busiest days since 1 Oct; 21 Oct was the Stephenson knock and the day Everytown endorsed. The last Wix form submission was 27 Sep. 25 to 31 Oct: 375 sessions and 336 visitors, one form submission (27 Oct).</p></figure>
+  <figure class="chart"><h3>Most of the lift arrives as direct traffic, not tagged ad clicks</h3><p class="sub">Sessions by source, 16 to 30 Sep. Wix traffic model.</p>
+    <div class="plot" data-chart="sources"></div>
+    <p class="cav">The traffic model's totals run 1 to 2% below site analytics (1,152 against 1,167). Direct sessions bounce at 84%, are 86% first-time visitors and 65% mobile, with a city mix led by Minneapolis and St. Paul. One form submission was recorded since 16 Sep across 1,167 sessions. The volunteer form runs on a separate system and is not counted.</p></figure>
+  <figure class="chart"><h3>Open rates are high and Issue 6 is still the best send</h3><p class="sub">41B Weekly and other sends, opens as a share of delivered. Wix email statistics, read 1 Nov.</p>
+    <div class="plot" data-chart="email"></div>
+    <p class="cav">Issue 6 (5 Oct) finished at 66% with 11 clicks, the best open and click counts of any numbered issue. The two "Jen in the news" sends (20 and 30 Oct) reached 63% and 58% with 8 clicks each. 130 contacts are subscribed on 1 Nov, against 128 on 31 Aug. Wix does not report unsubscribes per send. Sends before 18 Oct are as read on 26 and 27 Oct.</p></figure>
+  <figure class="chart"><h3>The campaign's one Meta ad drew more impressions than any caucus ad against Beck</h3><p class="sub">Meta Ad Library impression ranges, read 1 Oct. Thousands of impressions, low to high end of the published range.</p>
+    <div class="plot" data-chart="ads"></div>
+    <p class="cav">The library publishes ranges, not exact counts. The Fox ad ran 16 to 29 Sep on $1,000 to $1,500 with an estimated audience of 50,000 to 100,000; a second ad started 30 Sep with no spend shown yet. Audience targeting is not shown in the public view. Beck's page has never run a Meta ad. Beck's Facebook page shows "1K followers" (rounded) against 748 for Jen Fox for House.</p></figure>
+</section>
+
+<section id="s11">
+  <div class="shead"><span class="num">Section 10</span><h2>Calendar</h2>
+  <p class="point">Absentee voting has been open since 18 Sep. The next public data on money arrives eight days before the election.</p></div>
+  <figure class="chart"><h3>Eleven dated events between 1 Oct and Election Day</h3><p class="sub">Dated events from the doc's calendar, 1 Oct to 3 Nov 2026. One cell per day.</p>
+    <div class="plot" data-chart="cal"></div>
+    <div class="plot" data-chart="cal_table"></div>
+    <p class="cav">The 16 Oct date is the early in-person voting date published on the campaign's vote page. The 6 and 7 Oct entries were added from the 5 Oct calendar read.</p></figure>
+</section>
+
+<section id="s12">
+  <div class="shead"><span class="num">Section 11</span><h2>Findings and concerns</h2>
+  <p class="point">Six items, each tied to public or campaign numbers above. These are findings and open questions, not advice.</p></div>
+  <ol class="find">
+    <li><b>The House line has been flat while the top of the ticket moved.</b> The DFL House candidate took 48.91% of the two-way vote in 2022 and 48.96% in 2024. In 2024 the DFL Senate candidate carried 41B by 2,765 and Fox lost it by 510.</li>
+    <li><b>The public page is current through Election Day.</b> As of 13 Oct it carries the Wednesday and Thursday knocks, the 17 Oct kick-off with Rep. Craig and Sen. Seeberger, the 21 Oct knock with Leader Stephenson and the daily get-out-the-vote shifts, all signing up through Mobilize; the Saturday and Sunday series were replaced by the daily shifts.</li>
+    <li><b>The site gets the clicks and not the signups.</b> Sessions went from about 25 to 78 a day after 16 Sep, 54 a day in early October and 39 a day in the week of 6 Oct, with no ad running. One form submission came in across 1,167 sessions from 16 to 30 Sep, and none from 27 Sep until 27 Oct. Who runs the Simpli.fi and Google Ads buys, and what they target?</li>
+    <li><b>Email opens are high and Issue 6 broke the click slump; the list is flat.</b> Opens run 46% to 66% on the sends with a full read. Clicks were 1 or 2 a send from 21 Sep until Issue 6 on 5 Oct drew 11. The list is 130 on 1 Nov against 128 on 31 Aug, after about 2,800 site sessions since then.</li>
+    <li><b>Signs are done as a program.</b> 560 households carry 578 signs on 26 Oct, 153 of the households in Cottage Grove (27%); one request is open. Pickup is planned for Wed 4 Nov.</li>
+    <li><b>Outside money came late, as it did in 2024.</b> 82% of 2024's outside money in 41B came after 15 Sep. Through 19 Oct, $61,135 has been reported against Fox and $224,372 against Beck, and Fox held $80,214 in cash against Beck's $15,157.</li>
+  </ol>
+</section>
+
+<section id="s14">
+  <div class="shead"><span class="num">Section 12</span><h2>Sources</h2>
+  <p class="point">The public and campaign sources behind the figures on this page.</p></div>
+  <h3>Election results and turnout</h3>
+  <ul class="plainlist">
+    <li>Minnesota Secretary of State results files: 2026 general (unofficial precinct files), 2024 general, 2022 general, 2020, 2018, 2016; 2026 primary precinct files</li>
+    <li>University of Minnesota election archive: 54B 2012, 54B 2014</li>
+    <li>Secretary of State historical voter turnout statistics, absentee data and voter registration counts; SOS Poll Finder</li>
+    <li>House seat counts and closest races: Wikipedia pages for the 2022 and 2024 Minnesota House elections</li>
+    <li>Precinct shapes: Legislative Coordinating Commission, 2024 general election VTDs</li>
+  </ul>
+  <h3>Money</h3>
+  <ul class="plainlist">
+    <li>Campaign Finance Board data downloads (independent expenditures file)</li>
+    <li>Campaign Finance Board report viewer: 2026 pre-general reports (1 Jan to 19 Oct) for Fox 19059, Beck 19245, Seeberger 18845, Dippel Senate 19246, the DFL House Caucus, HRCC and the outside committees active in 41B; large contribution notices</li>
+    <li>2026 House candidate reporting calendar</li>
+  </ul>
+  <h3>Coverage and polling</h3>
+  <ul class="plainlist">
+    <li>MPR News, 29 Sep 2026: These 27 Minnesota legislative races are the most competitive</li>
+    <li>Pioneer Press, 27 Sep 2026: MN legislative races in places like Hastings, Cottage Grove may be decisive</li>
+    <li>KDWA: Beck interview and 30 Sep forum notice. Action 4 Liberty, 11 Sep 2026</li>
+    <li>LWV forum recording, 15 Sep (YouTube); Hastings Candidate Forum 2026, 30 Sep (YouTube); machine transcripts of both recordings</li>
+    <li>City of Hastings, City Council roster and elections page; Hastings Star Gazette; Beck campaign site</li>
+    <li>Polls: InsiderAdvantage, co/efficient, TIPP, KSTP/SurveyUSA, 270toWin, RealClearPolitics averages, Wikipedia pages for the governor and US Senate races</li>
+    <li>Cook Political Report, CD2. Meta Ad Library, 1 Oct</li>
+  </ul>
+  <h3>Campaign systems</h3>
+  <ul class="plainlist">
+    <li>The campaign's sign app: delivered households, dates and coordinates</li>
+    <li>Wix site analytics, forms and email campaign statistics for jenfoxforhouse.com</li>
+    <li>The campaign calendar and the public events page</li>
+    <li>Field figures: sample values for this demo</li>
+  </ul>
+  <details class="audit"><summary>Audit table: every charted figure with its source line</summary><pre id="audit-pre"></pre></details>
+</section>
+<footer>Built 1 Oct 2026 and updated through 5 Nov 2026 from the campaign's State of the Race brief. Portfolio demo: field figures are sample values. No voter names, addresses or voter records appear here.</footer>
+</div>
+
+<script type="application/json" id="brief-data">{"tiles_main": {"type": "tiles", "src": "Sample values for the portfolio demo, not VoteBuilder data; 2024 margin from the MN Secretary of State; signs from the campaign sign app, 1 Nov; subscribers from Wix, 1 Nov", "items": [{"v": 1, "l": "days to Election Day", "s": "counted from 2 Nov"}, {"v": 510, "l": "votes, 2024 margin", "s": "Dippel 12,529, Fox 12,019"}, {"v": 44000, "l": "door and phone attempts", "s": "sample value"}, {"v": 10000, "l": "conversations", "s": "sample value"}, {"v": 2500, "l": "supporters identified", "s": "sample value"}, {"v": 560, "l": "households with a sign", "s": "578 signs; 1 request open; 1 Nov"}, {"v": 130, "l": "email subscribers", "s": "1 Nov; last send delivered to 128"}]}, "pace": {"type": "bars", "fmt": "n", "src": "Sample values for the portfolio demo, not VoteBuilder data", "key": [{"c": "fox", "t": "2026, through 31 Oct"}, {"c": "neu2", "t": "2024, through 2 Nov"}], "rows": [{"l": "Door attempts", "bars": [{"segs": [{"v": 40000, "c": "fox"}], "val": "40,000"}, {"segs": [{"v": 34000, "c": "neu2"}], "val": "34,000"}], "sub": "2026 is 18% higher"}, {"l": "Door conversations", "bars": [{"segs": [{"v": 10000, "c": "fox"}], "val": "10,000"}, {"segs": [{"v": 7500, "c": "neu2"}], "val": "7,500"}], "sub": "2026 is 33% higher"}]}, "polls_gov": {"type": "dots", "min": 30, "max": 56, "ticks": [35, 40, 45, 50, 55], "unit": "%", "key": [{"c": "fox", "t": "DFL candidate, round marker", "dot": true}, {"c": "gop", "t": "Republican candidate, square marker"}], "src": "State of the Race doc: The race, table 'Statewide polls, newest first' and the verification paragraph under it", "rows": [{"l": "co/efficient", "sub": "14 to 15 Sep · 833 LV", "a": {"v": 47, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 45, "c": "gop", "n": "R"}}, {"l": "KSTP/SurveyUSA", "sub": "9 to 14 Sep · 654 LV", "a": {"v": 47, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 40, "c": "gop", "n": "R"}}, {"l": "TIPP, registered", "sub": "31 Aug to 2 Sep · 1,494 RV", "a": {"v": 47, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 37, "c": "gop", "n": "R"}}, {"l": "TIPP, likely", "sub": "same poll · 1,201 LV", "a": {"v": 50, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 40, "c": "gop", "n": "R"}}, {"l": "KSTP/SurveyUSA", "sub": "13 to 17 Aug · 661 LV", "a": {"v": 52, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 36, "c": "gop", "n": "R"}}]}, "polls_sen": {"type": "dots", "min": 30, "max": 56, "ticks": [35, 40, 45, 50, 55], "unit": "%", "key": [{"c": "fox", "t": "DFL candidate, round marker", "dot": true}, {"c": "gop", "t": "Republican candidate, square marker"}], "src": "State of the Race doc: The race, table 'Statewide polls, newest first' and the verification paragraph (Quantus 48.2 to 44.4, Deep Root 50 to 45, unverified)", "rows": [{"l": "InsiderAdvantage", "sub": "28 to 29 Sep · 1,200 LV", "a": {"v": 46, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 45, "c": "gop", "n": "R"}}, {"l": "co/efficient", "sub": "mid Sep · 833 LV", "a": {"v": 43, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 42, "c": "gop", "n": "R"}}, {"l": "KSTP/SurveyUSA", "sub": "9 to 14 Sep · 654 LV", "a": {"v": 42, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 42, "c": "gop", "n": "R"}}, {"l": "Quantus, not verified", "sub": "8 to 10 Sep · 720 LV", "a": {"v": 48.2, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 44.4, "c": "gop", "n": "R"}}, {"l": "TIPP, registered", "sub": "31 Aug to 2 Sep · 1,494 RV", "a": {"v": 40, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 38, "c": "gop", "n": "R"}}, {"l": "TIPP, likely", "sub": "same poll · 1,201 LV", "a": {"v": 44, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 42, "c": "gop", "n": "R"}}, {"l": "Deep Root (R), not verified", "sub": "17 to 18 Aug · 597 RV", "a": {"v": 50, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 45, "c": "gop", "n": "R"}}, {"l": "KSTP/SurveyUSA", "sub": "13 to 17 Aug · 661 LV", "a": {"v": 46, "c": "fox", "round": true, "n": "DFL"}, "b": {"v": 41, "c": "gop", "n": "R"}}]}, "ie_pairs": {"type": "bars", "fmt": "$", "reserve": "9rem", "src": "Spenders' 2026 pre-general reports, schedule B3A, 1 Jan to 19 Oct, read 27 Oct, for the twelve committees active in 41B and SD41. For Fox adds the 15 Sep amounts of three spenders not re-read ($13,213)", "key": [{"c": "fox", "t": "Spent in support of the DFL candidate"}, {"c": "gop", "t": "Spent in support of the Republican"}, {"c": "hatch", "t": "Spent against"}], "rows": [{"l": "Fox (DFL), 41B", "bars": [{"segs": [{"v": 56445, "c": "fox"}], "val": "$56,445 for"}, {"segs": [{"v": 61135, "c": "hatch"}], "val": "$61,135 against"}]}, {"l": "Beck (R), 41B", "bars": [{"segs": [{"v": 7922, "c": "gop"}], "val": "$7,922 for (plus $41,295 coordinated TV)"}, {"segs": [{"v": 224372, "c": "hatch"}], "val": "$224,372 against"}]}, {"l": "Seeberger (DFL), SD41", "bars": [{"segs": [{"v": 48381, "c": "fox"}], "val": "$48,381 for (Planned Parenthood only)"}, {"segs": [{"v": 618000, "c": "hatch"}], "val": "$618,000 against"}]}, {"l": "Dippel (R), SD41", "bars": [{"segs": [{"v": 268933, "c": "gop"}], "val": "$268,933 for"}, {"segs": [{"v": 8781, "c": "hatch"}], "val": "$8,781 against"}]}]}, "tiles_forum": {"type": "tiles", "src": "YouTube view counts read 1 Oct 2026 (231 and 210 views; 59 and 58 minutes)", "items": [{"v": 231, "l": "views, LWV forum", "s": "15 Sep, 59 minutes, six candidates"}, {"v": 210, "l": "views, Hastings forum", "s": "30 Sep, 58 minutes, 41B then SD41"}]}, "forum_rec": {"type": "rec", "total": 58.77, "aria": "Hastings forum recording timeline", "src": "Hastings forum recording, 30 Sep (41B segment 14:36 to 29:49, SD41 34:33 to 54:30; 58:46 length, no speech before 12:57)", "key": [{"c": "hatch", "t": "Room audio before the forum, 0:00 to 12:57"}, {"c": "fox", "t": "41B, Fox and Beck"}, {"c": "neu", "t": "SD41, Seeberger and Dippel"}], "segs": [{"a": 0, "b": 12.95, "c": "hatch", "t": "Pre-forum room audio, 0:00 to 12:57"}, {"a": 14.6, "b": 29.82, "c": "fox", "t": "41B segment, 14:36 to 29:49"}, {"a": 34.55, "b": 54.5, "c": "neu", "t": "SD41 segment, 34:33 to 54:30"}], "labels": [{"at": 14.6, "t": "41B 14:36 to 29:49"}, {"at": 34.55, "t": "SD41 34:33 to 54:30"}]}, "grid_lwv": {"type": "forum", "src": "LWV forum recording, 15 Sep, and its auto-caption transcript (theme coding for this brief)", "rows": [{"q": "Opening", "time": "Fox 7:18, Beck 4:50", "fox": ["Water", "Affordability and taxes", "Education", "~health care"], "beck": ["Affordability and taxes", "Fraud", "Education"]}, {"q": "Natural resources, data centers, mining", "time": "10:24", "fox": ["~data center guardrails"], "beck": ["Water", "~NDA ban for data centers"]}, {"q": "Gun violence", "time": "16:05", "fox": ["Guns"], "beck": ["Guns", "~mental health"]}, {"q": "Fraud", "time": "22:05", "fox": ["Fraud"], "beck": ["Fraud"]}, {"q": "Tax relief and what to cut", "time": "27:56", "fox": ["Affordability and taxes"], "beck": ["Affordability and taxes"]}, {"q": "Election confidence", "time": "34:00", "fox": ["Elections"], "beck": ["Elections", "~voter ID"]}, {"q": "Immigration enforcement", "time": "39:27", "fox": ["Immigration"], "beck": ["Immigration"]}, {"q": "Affordable housing", "time": "45:28", "fox": ["Housing"], "beck": ["Housing", "~zoning"]}, {"q": "One priority", "time": "51:17", "fox": ["Affordability and taxes", "Water"], "beck": ["Affordability and taxes", "Education", "~accountability"]}, {"q": "Closing", "time": "Fox 54:25, Beck 57:23 (transcript only)", "fox": ["Affordability and taxes", "Housing", "~health care"], "beck": ["Affordability and taxes", "Fraud", "Education", "~disabilities"]}]}, "grid_hast": {"type": "forum", "src": "Hastings forum recording, 30 Sep, and its machine transcript (theme coding for this brief)", "rows": [{"q": "Opening", "time": "Fox 15:57, Beck 15:00", "fox": ["Affordability and taxes", "~leadership, safe communities"], "beck": ["Affordability and taxes", "Fraud", "Education", "Water"]}, {"q": "Why run", "time": "17:09", "fox": ["~hope over fear"], "beck": ["Fraud", "Water", "Education", "Affordability and taxes"]}, {"q": "Biggest challenge for the Hastings area", "time": "18:53", "fox": ["Water", "Affordability and taxes"], "beck": ["Water", "Affordability and taxes"]}, {"q": "Working with the other party", "time": "20:50", "fox": ["~people over politics"], "beck": ["Water", "~Flock cameras", "~data centers"]}, {"q": "Post-secondary education and career training", "time": "23:02", "fox": ["Education"], "beck": ["Education", "~trades"]}, {"q": "One policy to lower costs", "time": "25:14", "fox": ["Affordability and taxes"], "beck": ["Affordability and taxes"]}, {"q": "Closing", "time": "Fox 28:00, Beck 28:58", "fox": ["Water", "Education", "~families, business"], "beck": ["Affordability and taxes", "Fraud", "Education", "~two or three terms"]}]}, "themes": {"type": "bars", "fmt": "n", "max": 10, "reserve": "5rem", "src": "Counted from the two forum grids in this brief (grid_lwv, grid_hast), which are coded from the doc's forum tables and the two transcripts. Not a figure in the doc.", "key": [{"c": "fox", "t": "Fox"}, {"c": "gop", "t": "Beck"}], "rows": [{"l": "Water", "bars": [{"segs": [{"v": 4, "c": "fox"}], "val": "Fox 4"}, {"segs": [{"v": 5, "c": "gop"}], "val": "Beck 5"}]}, {"l": "Affordability and taxes", "bars": [{"segs": [{"v": 7, "c": "fox"}], "val": "Fox 7"}, {"segs": [{"v": 9, "c": "gop"}], "val": "Beck 9"}]}, {"l": "Fraud", "bars": [{"segs": [{"v": 1, "c": "fox"}], "val": "Fox 1"}, {"segs": [{"v": 6, "c": "gop"}], "val": "Beck 6"}]}, {"l": "Education", "bars": [{"segs": [{"v": 3, "c": "fox"}], "val": "Fox 3"}, {"segs": [{"v": 7, "c": "gop"}], "val": "Beck 7"}]}, {"l": "Housing", "bars": [{"segs": [{"v": 2, "c": "fox"}], "val": "Fox 2"}, {"segs": [{"v": 1, "c": "gop"}], "val": "Beck 1"}]}, {"l": "Guns", "bars": [{"segs": [{"v": 1, "c": "fox"}], "val": "Fox 1"}, {"segs": [{"v": 1, "c": "gop"}], "val": "Beck 1"}]}, {"l": "Immigration", "bars": [{"segs": [{"v": 1, "c": "fox"}], "val": "Fox 1"}, {"segs": [{"v": 1, "c": "gop"}], "val": "Beck 1"}]}, {"l": "Elections", "bars": [{"segs": [{"v": 1, "c": "fox"}], "val": "Fox 1"}, {"segs": [{"v": 1, "c": "gop"}], "val": "Beck 1"}]}]}, "margin": {"type": "line", "n": 7, "ymax": 24, "yticks": [0, 5, 10, 15, 20], "mr": 30, "aria": "Republican margin in the House race, 2012 to 2024, percentage points", "src": "State of the Race doc: Past cycles, results table (R margin column)", "xlabels": [{"i": 0, "t": "2012"}, {"i": 1, "t": "2014"}, {"i": 2, "t": "2016"}, {"i": 3, "t": "2018"}, {"i": 4, "t": "2020"}, {"i": 5, "t": "2022"}, {"i": 6, "t": "2024"}], "vmarks": [{"i": 6, "t": "2024: 510 votes"}], "series": [{"c": "gop2", "dash": true, "dots": true, "pts": [{"i": 0, "v": 15.01, "t": "15.01", "anchor": "start", "tip": "2012: R +15.01 pts, 3,265 votes"}, {"i": 1, "v": 21.22, "t": "21.22", "anchor": "middle", "tip": "2014: R +21.22 pts, 3,103 votes"}, {"i": 2, "v": 10.75, "t": "10.75", "anchor": "middle", "tip": "2016: R +10.75 pts, 2,325 votes"}, {"i": 3, "v": 2.16, "t": "2.16", "anchor": "middle", "tip": "2018: R +2.16 pts, 422 votes"}, {"i": 4, "v": 7.21, "t": "7.21", "anchor": "middle", "tip": "2020: R +7.21 pts, 1,774 votes"}]}, {"c": "gop", "dots": true, "pts": [{"i": 5, "v": 2.18, "t": "2.18", "anchor": "middle", "tip": "2022: R +2.18 pts, 418 votes"}, {"i": 6, "v": 2.07, "t": "2.07", "anchor": "end", "tip": "2024: R +2.07 pts, 510 votes"}]}]}, "area2024": {"type": "bars", "fmt": "n", "src": "State of the Race doc: Past cycles, 'Inside the district in 2024' (5,067 to 4,706; lost the rest by 871); rest-of-district totals derived from 12,019 and 12,529", "key": [{"c": "fox", "t": "Fox (DFL)"}, {"c": "gop", "t": "Dippel (R)"}], "rows": [{"l": "Cottage Grove, four precincts", "sub": "Fox +361", "bars": [{"segs": [{"v": 5067, "c": "fox"}], "val": "5,067"}, {"segs": [{"v": 4706, "c": "gop"}], "val": "4,706"}]}, {"l": "Rest of district", "sub": "Dippel +871, totals derived", "bars": [{"segs": [{"v": 6952, "c": "fox"}], "val": "6,952"}, {"segs": [{"v": 7823, "c": "gop"}], "val": "7,823"}]}]}, "split": {"type": "dots", "min": 40, "max": 56, "ticks": [40, 45, 50, 55], "unit": "%", "src": "State of the Race doc: Ticket splitting, table 'Race inside 41B'", "key": [{"c": "fox", "t": "DFL candidate, round marker", "dot": true}, {"c": "gop", "t": "Republican candidate, square marker"}], "rows": [{"l": "2024 US Senate", "sub": "DFL +2,765", "a": {"v": 53.87, "c": "fox", "round": true, "n": "DFL", "t": "53.87"}, "b": {"v": 42.69, "c": "gop", "n": "R", "t": "42.69"}}, {"l": "2024 CD2", "sub": "Craig +2,001 over Teirab", "a": {"v": 52.68, "c": "fox", "round": true, "n": "Craig", "t": "52.68"}, "b": {"v": 44.56, "c": "gop", "n": "Teirab", "t": "44.56"}}, {"l": "2024 President", "sub": "DFL 494 behind", "a": {"v": 47.96, "c": "fox", "round": true, "n": "DFL", "t": "47.96"}, "b": {"v": 49.92, "c": "gop", "n": "R", "t": "49.92"}}, {"l": "2024 House 41B", "sub": "Fox 510 behind Dippel", "a": {"v": 48.86, "c": "fox", "round": true, "n": "Fox", "t": "48.86"}, "b": {"v": 50.94, "c": "gop", "n": "Dippel", "t": "50.94"}, "hl": true}, {"l": "2022 Secretary of State", "sub": "DFL +776", "a": {"v": 52.03, "c": "fox", "round": true, "n": "DFL", "t": "52.03"}, "b": {"v": 47.9, "c": "gop", "n": "R", "t": "47.90"}}, {"l": "2022 Governor", "sub": "DFL +577", "a": {"v": 49.89, "c": "fox", "round": true, "n": "DFL", "t": "49.89"}, "b": {"v": 46.9, "c": "gop", "n": "R", "t": "46.90"}}, {"l": "2022 CD2", "sub": "Craig +23 over Kistner", "a": {"v": 48.01, "c": "fox", "round": true, "n": "Craig", "t": "48.01"}, "b": {"v": 47.89, "c": "gop", "n": "Kistner", "t": "47.89"}}, {"l": "2022 House 41B", "sub": "Folch 418 behind Hudella", "a": {"v": 48.87, "c": "fox", "round": true, "n": "Folch", "t": "48.87"}, "b": {"v": 51.05, "c": "gop", "n": "Hudella", "t": "51.05"}, "hl": true}, {"l": "2022 Attorney General", "sub": "DFL 1,053 behind", "a": {"v": 47.2, "c": "fox", "round": true, "n": "DFL", "t": "47.20"}, "b": {"v": 52.69, "c": "gop", "n": "R", "t": "52.69"}}, {"l": "2022 Auditor", "sub": "DFL 1,019 behind", "a": {"v": 44.28, "c": "fox", "round": true, "n": "DFL", "t": "44.28"}, "b": {"v": 49.66, "c": "gop", "n": "R", "t": "49.66"}}]}, "turnout": {"type": "bars", "fmt": "n", "src": "State of the Race doc: Turnout, 2022/2024 table (polls, absentee, total voting) and 'A 2026 estimate' (about 21,100)", "key": [{"c": "neu", "t": "Voted at the polls"}, {"c": "neu2", "t": "Absentee or by mail"}, {"c": "est", "t": "2026 estimate"}], "rows": [{"l": "2022, governor year", "segs": [{"v": 14277, "c": "neu", "t": "14,277 polls"}, {"v": 5126, "c": "neu2", "t": "5,126"}], "val": "19,403"}, {"l": "2024, presidential year", "segs": [{"v": 14422, "c": "neu", "t": "14,422 polls"}, {"v": 10819, "c": "neu2", "t": "10,819 absentee"}], "val": "25,244"}, {"l": "2026", "sub": "estimate", "segs": [{"v": 21100, "c": "est", "t": "estimate"}], "val": "about 21,100"}]}, "cg_gap": {"type": "bars", "fmt": "%", "max": 100, "reserve": "4rem", "src": "State of the Race doc: Turnout, 'The governor-year gap' (68.3% and 72.5%)", "rows": [{"l": "Cottage Grove", "segs": [{"v": 68.3, "c": "cg"}], "val": "68.3%"}, {"l": "Rest of district", "segs": [{"v": 72.5, "c": "hast"}], "val": "72.5%"}]}, "primary": {"type": "bars", "fmt": "n", "reserve": "4rem", "src": "State of the Race doc: Turnout, 'Primary turnout is not a signal' (7,766 against 7,195)", "rows": [{"l": "August 2022", "segs": [{"v": 7195, "c": "neu2"}], "val": "7,195"}, {"l": "August 2026", "segs": [{"v": 7766, "c": "neu"}], "val": "7,766"}]}, "cand_money": {"type": "bars", "fmt": "$", "reserve": "6rem", "max": 125559, "src": "CFB pre-general reports, 1 Jan to 19 Oct 2026, read 27 Oct: Fox 19059 original (received 26 Oct), Beck 19245 amendment 2 (received 23 Oct). Spending limits from each candidate's board page; 2025 campaign spending ($31.25) from the 2025 year-end report", "key": [{"c": "fox", "t": "Fox"}, {"c": "gop", "t": "Beck"}, {"c": "out", "t": "Dashed line: two-year spending limit, set against campaign spending (the part that counts)"}], "rows": [{"l": "Raised", "bars": [{"segs": [{"v": 125559, "c": "fox"}], "val": "Fox $125,559"}, {"segs": [{"v": 81683, "c": "gop"}], "val": "Beck $81,683 ($41,295 HRCC in-kind)"}]}, {"l": "Spent, all", "bars": [{"segs": [{"v": 78425, "c": "fox"}], "val": "Fox $78,425"}, {"segs": [{"v": 73162, "c": "gop"}], "val": "Beck $73,162"}]}, {"l": "Campaign spending (counts toward the limit)", "bars": [{"segs": [{"v": 69638, "c": "fox"}], "val": "Fox $69,638; $14,531 of room left on 19 Oct", "ref": {"v": 84200, "t": "Fox spending limit $84,200"}}, {"segs": [{"v": 72665, "c": "gop"}], "val": "Beck $72,665", "ref": {"v": 92620, "t": "Beck spending limit $92,620"}}]}, {"l": "Cash on 19 Oct", "bars": [{"segs": [{"v": 80214, "c": "fox"}], "val": "Fox $80,214"}, {"segs": [{"v": 15157, "c": "gop"}], "val": "Beck $15,157"}]}]}, "ie_sep": {"type": "bars", "fmt": "$", "reserve": "5rem", "key": [{"c": "fox", "t": "DFL side"}, {"c": "gop", "t": "Republican side"}], "src": "State of the Race doc: Money, table 'Independent expenditures in 41B, by side' (through 15 Sep rows); 2026 Republican side corrected 27 Oct to add $11,882.61 of HRCC mail against Fox filed under id 15594", "rows": [{"l": "2026, through 15 Sep", "sub": "total $120,184, corrected 27 Oct", "bars": [{"segs": [{"v": 104340, "c": "fox"}], "val": "$104,340"}, {"segs": [{"v": 15844, "c": "gop"}], "val": "$15,844"}]}, {"l": "2024, through 15 Sep", "sub": "total $244,363", "bars": [{"segs": [{"v": 142903, "c": "fox"}], "val": "$142,903"}, {"segs": [{"v": 101460, "c": "gop"}], "val": "$101,460"}]}]}, "ie_full": {"type": "bars", "fmt": "$", "reserve": "5rem", "key": [{"c": "fox", "t": "DFL side"}, {"c": "gop", "t": "Republican side"}], "src": "State of the Race doc: Money, table 'Independent expenditures in 41B, by side' (full year rows); '82% ... after 15 Sep'", "rows": [{"l": "2024, full year", "sub": "total $1,395,475", "bars": [{"segs": [{"v": 882821, "c": "fox"}], "val": "$882,821"}, {"segs": [{"v": 512654, "c": "gop"}], "val": "$512,654"}]}, {"l": "2022, full year", "sub": "total $160,891", "bars": [{"segs": [{"v": 39308, "c": "fox"}], "val": "$39,308"}, {"segs": [{"v": 121583, "c": "gop"}], "val": "$121,583"}]}]}, "spenders": {"type": "bars", "fmt": "$", "wide": true, "reserve": "5rem", "src": "Spenders' 2026 pre-general reports, schedule B3A, 1 Jan to 19 Oct, read 27 Oct. DFL State Central, MN AFL-CIO and AFSCME rows are the 15 Sep file, not re-read", "key": [{"c": "fox", "t": "For Fox"}, {"c": "hatch", "t": "Against Beck"}, {"c": "gop", "t": "For Beck"}, {"c": "gop2", "t": "Against Fox"}], "rows": [{"l": "MN Family Prosperity Project", "sub": "against Beck, cable", "segs": [{"v": 122702, "c": "hatch"}], "val": "$122,702"}, {"l": "DFL House Caucus", "sub": "against Beck $97,264; for Fox $9,009", "segs": [{"v": 97264, "c": "hatch"}, {"v": 9009, "c": "fox"}], "val": "$106,273"}, {"l": "HRCC", "sub": "against Fox $58,735 (11 mailers, radio, digital); for Beck $7,922", "hl": true, "segs": [{"v": 58735, "c": "gop2"}, {"v": 7922, "c": "gop"}], "val": "$66,657"}, {"l": "Planned Parenthood MN PAF", "sub": "for Fox $25,318 (canvassing); against Beck $4,406", "segs": [{"v": 25318, "c": "fox"}, {"v": 4406, "c": "hatch"}], "val": "$29,724"}, {"l": "DFL State Central Committee", "sub": "for Fox, mail (15 Sep file)", "segs": [{"v": 12306, "c": "fox"}], "val": "$12,306"}, {"l": "Together Minnesota", "sub": "for Fox, digital ads", "segs": [{"v": 8905, "c": "fox"}], "val": "$8,905"}, {"l": "Renew Minnesota", "sub": "against Fox, four $600 buys", "segs": [{"v": 2400, "c": "gop2"}], "val": "$2,400"}, {"l": "MN AFL-CIO", "sub": "for Fox (15 Sep file)", "segs": [{"v": 478, "c": "fox"}], "val": "$478"}, {"l": "AFSCME Working Families Fund", "sub": "for Fox (15 Sep file)", "segs": [{"v": 429, "c": "fox"}], "val": "$429"}]}, "types": {"type": "bars", "fmt": "n", "reserve": "8.5rem", "src": "Sample values for the portfolio demo, not VoteBuilder data", "key": [{"c": "fox", "t": "Doors (Walk)"}, {"c": "fox2", "t": "Phones"}, {"c": "hatch", "t": "Bulk Email"}], "rows": [{"l": "2026 attempts", "sub": "doors 33,000, phones 4,000", "segs": [{"v": 33000, "c": "fox", "t": "Doors 33,000"}, {"v": 4000, "c": "fox2"}], "val": "37,000 · 21% rate"}, {"l": "2024 attempts", "sub": "doors 27,000, phones 600, bulk email 2,900", "segs": [{"v": 27000, "c": "fox", "t": "Doors 27,000"}, {"v": 600, "c": "fox2"}, {"v": 2900, "c": "hatch"}], "val": "30,500 · 30% rate"}, {"l": "2026 conversations", "sub": "doors 7,600, phones 250", "segs": [{"v": 7600, "c": "fox"}, {"v": 250, "c": "fox2"}], "val": "7,850"}, {"l": "2024 conversations", "sub": "doors 6,000, phones 100, bulk email 2,900", "segs": [{"v": 6000, "c": "fox"}, {"v": 100, "c": "fox2"}, {"v": 2900, "c": "hatch"}], "val": "9,000"}]}, "months": {"type": "bars", "fmt": "n", "reserve": "12rem", "src": "Sample values for the portfolio demo, not VoteBuilder data", "key": [{"c": "fox", "t": "2026, all types"}, {"c": "neu2", "t": "2024, all types"}, {"c": "neu", "t": "2024 doors"}, {"c": "hatch", "t": "2024 non-door (phones, bulk email)"}], "rows": [{"l": "January to May", "bars": [{"segs": [{"v": 2500, "c": "fox"}], "val": "2026: 2,500 · 500 conv."}, {"segs": [{"v": 1400, "c": "neu2"}], "val": "2024: 1,400 · 200 conv."}]}, {"l": "June", "bars": [{"segs": [{"v": 10000, "c": "fox"}], "val": "2026: 10,000 · 1,900 conv."}, {"segs": [{"v": 5500, "c": "neu2"}], "val": "2024: 5,500 · 1,100 conv."}]}, {"l": "July", "bars": [{"segs": [{"v": 8000, "c": "fox"}], "val": "2026: 8,000 · 1,900 conv."}, {"segs": [{"v": 2600, "c": "neu2"}], "val": "2024: 2,600 · 500 conv."}]}, {"l": "August", "bars": [{"segs": [{"v": 6500, "c": "fox"}], "val": "2026: 6,500 · 1,200 conv."}, {"segs": [{"v": 9600, "c": "neu2"}], "val": "2024: 9,600 · 3,000 conv."}]}, {"l": "September", "bars": [{"segs": [{"v": 10300, "c": "fox"}], "val": "2026: 10,300 · 2,600 conv."}, {"segs": [{"v": 9200, "c": "neu"}, {"v": 1900, "c": "hatch"}], "val": "2024: 11,100 · doors 9,200"}], "sub": "2024: 4,000 conv., 2,100 at doors"}, {"l": "October", "bars": [{"segs": [{"v": 7200, "c": "fox"}], "val": "2026: 7,200 · 2,400 conv."}, {"segs": [{"v": 7400, "c": "neu"}, {"v": 800, "c": "hatch"}], "val": "2024: 8,200 · doors 7,400"}], "sub": "2024: 2,400 conv., 1,600 at doors"}, {"l": "1 to 5 November", "bars": [{"segs": [{"v": 0.001, "c": "fox"}], "val": "2026: not yet"}, {"segs": [{"v": 4100, "c": "hatch"}], "val": "2024: 4,100 · doors 0"}], "sub": "2024: 500 conv., no doors"}]}, "weeks": {"type": "bars", "fmt": "n", "reserve": "8rem", "src": "Sample values for the portfolio demo, not VoteBuilder data", "key": [{"c": "fox", "t": "Doors (Walk)"}, {"c": "fox2", "t": "Phones (all types minus Walk)"}], "rows": [{"l": "31 Aug to 6 Sep", "sub": "300 conversations", "segs": [{"v": 1000, "c": "fox", "t": "Doors 1,000"}, {"v": 300, "c": "fox2"}], "val": "1,300"}, {"l": "7 to 13 Sep", "sub": "400 conversations", "segs": [{"v": 1700, "c": "fox", "t": "Doors 1,700"}, {"v": 300, "c": "fox2"}], "val": "2,000"}, {"l": "14 to 20 Sep", "sub": "550 conversations", "segs": [{"v": 1900, "c": "fox", "t": "Doors 1,900"}, {"v": 450, "c": "fox2"}], "val": "2,350"}, {"l": "21 to 27 Sep", "sub": "850 conversations", "segs": [{"v": 3100, "c": "fox", "t": "Doors 3,100"}, {"v": 150, "c": "fox2"}], "val": "3,250"}, {"l": "28 Sep to 4 Oct", "sub": "1,200 conversations", "segs": [{"v": 4100, "c": "fox", "t": "Doors 4,100"}, {"v": 10, "c": "fox2"}], "val": "4,110"}, {"l": "5 to 11 Oct", "sub": "1,000 conversations", "segs": [{"v": 2300, "c": "fox", "t": "Doors 2,300"}, {"v": 300, "c": "fox2"}], "val": "2,600"}, {"l": "12 to 18 Oct", "sub": "500 conversations", "segs": [{"v": 1800, "c": "fox", "t": "Doors 1,800"}, {"v": 150, "c": "fox2"}], "val": "1,950"}, {"l": "19 to 25 Oct", "sub": "800 conversations", "segs": [{"v": 3000, "c": "fox", "t": "Doors 3,000"}, {"v": 100, "c": "fox2"}], "val": "3,100"}, {"l": "26 to 31 Oct", "sub": "700 conversations", "segs": [{"v": 2800, "c": "fox", "t": "Doors 2,800"}, {"v": 150, "c": "fox2"}], "val": "2,950", "hl": true}]}, "canv": {"type": "bars", "fmt": "%", "max": 100, "reserve": "3.5rem", "src": "Sample values for the portfolio demo, not VoteBuilder data", "rows": [{"l": "Top canvasser", "segs": [{"v": 25, "c": "neu"}], "val": "25%"}, {"l": "Top 5", "segs": [{"v": 65, "c": "neu"}], "val": "65%"}, {"l": "Top 10", "segs": [{"v": 80, "c": "neu"}], "val": "80%"}, {"l": "Top 20", "segs": [{"v": 85, "c": "neu"}], "val": "85%"}]}, "county": {"type": "bars", "fmt": "n", "reserve": "9rem", "src": "Sample values for the portfolio demo, not VoteBuilder data", "rows": [{"l": "Dakota", "sub": "Hastings and Nininger", "bars": [{"segs": [{"v": 25000, "c": "hast"}], "val": "25,000 attempts"}, {"segs": [{"v": 6250, "c": "hast"}], "val": "6,250 conv. (25%)"}]}, {"l": "Washington", "sub": "Cottage Grove and Denmark", "bars": [{"segs": [{"v": 20000, "c": "cg"}], "val": "20,000 attempts"}, {"segs": [{"v": 4200, "c": "cg"}], "val": "4,200 conv. (21%)"}]}]}, "ev_trend": {"type": "bars", "fmt": "n", "reserve": "8rem", "src": "Sample values for the portfolio demo, not VoteBuilder data; 2022 and 2024 totals in the caption from the MN Secretary of State", "key": [{"c": "neu2", "t": "Ballot applications"}, {"c": "neu", "t": "Ballots cast"}], "rows": [{"l": "18 Sep", "bars": [{"segs": [{"v": 1200, "c": "neu2"}], "val": "1,200 applications"}, {"segs": [{"v": 0.001, "c": "neu"}], "val": "no ballots yet"}]}, {"l": "25 Sep", "bars": [{"segs": [{"v": 1600, "c": "neu2"}], "val": "1,600 applications"}, {"segs": [{"v": 200, "c": "neu"}], "val": "200 ballots"}]}, {"l": "30 Sep", "bars": [{"segs": [{"v": 1700, "c": "neu2"}], "val": "1,700 applications"}, {"segs": [{"v": 400, "c": "neu"}], "val": "400 ballots"}]}, {"l": "5 Oct", "bars": [{"segs": [{"v": 1900, "c": "neu2"}], "val": "1,900 applications"}, {"segs": [{"v": 600, "c": "neu"}], "val": "600 ballots"}]}, {"l": "13 Oct", "bars": [{"segs": [{"v": 2400, "c": "neu2"}], "val": "2,400 applications"}, {"segs": [{"v": 1100, "c": "neu"}], "val": "1,100 ballots"}]}, {"l": "21 Oct", "bars": [{"segs": [{"v": 2750, "c": "neu2"}], "val": "2,750 applications"}, {"segs": [{"v": 2700, "c": "neu"}], "val": "2,700 ballots"}]}, {"l": "26 Oct", "bars": [{"segs": [{"v": 2800, "c": "neu2"}], "val": "2,800 applications"}, {"segs": [{"v": 3800, "c": "neu"}], "val": "3,800 ballots"}]}, {"l": "27 Oct", "bars": [{"segs": [{"v": 2800, "c": "neu2"}], "val": "2,800 applications"}, {"segs": [{"v": 4200, "c": "neu"}], "val": "4,200 ballots"}]}, {"l": "28 Oct", "bars": [{"segs": [{"v": 2800, "c": "neu2"}], "val": "2,800 applications"}, {"segs": [{"v": 4800, "c": "neu"}], "val": "4,800 ballots"}]}, {"l": "29 Oct", "bars": [{"segs": [{"v": 2800, "c": "neu2"}], "val": "2,800 applications"}, {"segs": [{"v": 5200, "c": "neu"}], "val": "5,200 ballots"}]}, {"l": "30 Oct", "bars": [{"segs": [{"v": 2800, "c": "neu2"}], "val": "2,800 applications"}, {"segs": [{"v": 5700, "c": "neu"}], "val": "5,700 ballots"}]}, {"l": "31 Oct", "bars": [{"segs": [{"v": 2800, "c": "neu2"}], "val": "2,800 applications"}, {"segs": [{"v": 6300, "c": "neu"}], "val": "6,300 ballots"}]}, {"l": "1 Nov", "bars": [{"segs": [{"v": 2800, "c": "neu2"}], "val": "2,800 applications"}, {"segs": [{"v": 6700, "c": "neu"}], "val": "6,700 ballots"}]}, {"l": "2 Nov", "bars": [{"segs": [{"v": 2800, "c": "neu2"}], "val": "2,800 applications"}, {"segs": [{"v": 7000, "c": "neu"}], "val": "7,000 ballots"}], "hl": true}]}, "ev_place": {"type": "bars", "fmt": "n", "reserve": "11rem", "src": "Sample values for the portfolio demo, not VoteBuilder data", "rows": [{"l": "Cottage Grove", "sub": "12,000 registered · 27.5 ballots per 100", "bars": [{"segs": [{"v": 1300, "c": "cg"}], "val": "1,300 applications"}, {"segs": [{"v": 3300, "c": "cg"}], "val": "3,300 ballots (47%)"}]}, {"l": "Hastings and Nininger", "sub": "Dakota County · 16,000 registered · 21.3 per 100", "bars": [{"segs": [{"v": 1400, "c": "hast"}], "val": "1,400 applications"}, {"segs": [{"v": 3400, "c": "hast"}], "val": "3,400 ballots (49%)"}]}, {"l": "Denmark Township", "sub": "1,400 registered · 21.4 per 100", "bars": [{"segs": [{"v": 150, "c": "neu"}], "val": "150 applications"}, {"segs": [{"v": 300, "c": "neu"}], "val": "300 ballots (4%)"}]}]}, "signs": {"type": "bars", "fmt": "n", "reserve": "3rem", "src": "Sign app base read 26 Oct, re-read 1 Nov unchanged (560 delivered households): coordinates tested against the SOS voting district polygons of 18 Sep 2026 (MNLEGDIST 41B, 15 precincts)", "key": [{"c": "hast", "t": "Hastings precincts (351)"}, {"c": "cg", "t": "Cottage Grove precincts (145)"}, {"c": "neu", "t": "Townships (28)"}], "rows": [{"l": "Hastings W-4 P-1", "segs": [{"v": 85, "c": "hast"}], "val": "85"}, {"l": "Hastings W-3 P-2", "segs": [{"v": 61, "c": "hast"}], "val": "61"}, {"l": "Cottage Grove P-05", "segs": [{"v": 58, "c": "cg"}], "val": "58", "hl": true}, {"l": "Hastings W-2 P-3", "segs": [{"v": 56, "c": "hast"}], "val": "56"}, {"l": "Hastings W-3 P-1", "segs": [{"v": 48, "c": "hast"}], "val": "48"}, {"l": "Cottage Grove P-04", "segs": [{"v": 48, "c": "cg"}], "val": "48", "hl": true}, {"l": "Hastings W-1 P-1", "segs": [{"v": 34, "c": "hast"}], "val": "34"}, {"l": "Hastings W-4 P-2", "segs": [{"v": 29, "c": "hast"}], "val": "29"}, {"l": "Cottage Grove P-07", "segs": [{"v": 25, "c": "cg"}], "val": "25", "hl": true}, {"l": "Hastings W-1 P-2", "segs": [{"v": 19, "c": "hast"}], "val": "19"}, {"l": "Hastings W-2 P-2", "segs": [{"v": 19, "c": "hast"}], "val": "19"}, {"l": "Denmark Township", "segs": [{"v": 16, "c": "neu"}], "val": "16"}, {"l": "Cottage Grove P-03", "segs": [{"v": 14, "c": "cg"}], "val": "14", "hl": true}, {"l": "Nininger Township", "segs": [{"v": 12, "c": "neu"}], "val": "12"}]}, "sign_trend": {"type": "bars", "fmt": "n", "max": 600, "reserve": "3rem", "src": "Campaign sign app, delivered households on each date (379, 412, 430, 467, 475, 511, 527, 560, 560)", "rows": [{"l": "4 Sep", "segs": [{"v": 379, "c": "neu2"}], "val": "379"}, {"l": "13 Sep", "segs": [{"v": 412, "c": "neu2"}], "val": "412"}, {"l": "18 Sep", "segs": [{"v": 430, "c": "neu2"}], "val": "430"}, {"l": "30 Sep", "segs": [{"v": 467, "c": "neu2"}], "val": "467"}, {"l": "5 Oct", "segs": [{"v": 475, "c": "neu2"}], "val": "475"}, {"l": "13 Oct", "segs": [{"v": 511, "c": "neu2"}], "val": "511"}, {"l": "21 Oct", "segs": [{"v": 527, "c": "neu2"}], "val": "527"}, {"l": "26 Oct", "segs": [{"v": 560, "c": "neu"}], "val": "560"}, {"l": "1 Nov", "segs": [{"v": 560, "c": "neu"}], "val": "560"}]}, "sessions": {"type": "line", "n": 93, "ymax": 120, "yticks": [0, 50, 100], "mr": 34, "aria": "Daily website sessions, 1 Aug to 1 Nov 2026", "src": "Wix Analytics API, daily sessions for jenfoxforhouse.com, 1 Aug to 1 Nov 2026, read 2 Nov", "xlabels": [{"i": 0, "t": "1 Aug"}, {"i": 31, "t": "1 Sep"}, {"i": 46, "t": "16 Sep"}, {"i": 61, "t": "1 Oct"}, {"i": 91, "t": "31 Oct"}], "vmarks": [{"i": 46, "t": "16 Sep: paid ads start"}], "series": [{"c": "fox", "dots": true, "pts": [{"i": 0, "v": 13, "tip": "1 Aug: 13 sessions"}, {"i": 1, "v": 10, "tip": "2 Aug: 10 sessions"}, {"i": 2, "v": 19, "tip": "3 Aug: 19 sessions"}, {"i": 3, "v": 25, "tip": "4 Aug: 25 sessions"}, {"i": 4, "v": 25, "tip": "5 Aug: 25 sessions"}, {"i": 5, "v": 29, "tip": "6 Aug: 29 sessions"}, {"i": 6, "v": 25, "tip": "7 Aug: 25 sessions"}, {"i": 7, "v": 13, "tip": "8 Aug: 13 sessions"}, {"i": 8, "v": 27, "tip": "9 Aug: 27 sessions"}, {"i": 9, "v": 34, "tip": "10 Aug: 34 sessions"}, {"i": 10, "v": 52, "tip": "11 Aug: 52 sessions"}, {"i": 11, "v": 67, "tip": "12 Aug: 67 sessions"}, {"i": 12, "v": 25, "tip": "13 Aug: 25 sessions"}, {"i": 13, "v": 19, "tip": "14 Aug: 19 sessions"}, {"i": 14, "v": 10, "tip": "15 Aug: 10 sessions"}, {"i": 15, "v": 19, "tip": "16 Aug: 19 sessions"}, {"i": 16, "v": 15, "tip": "17 Aug: 15 sessions"}, {"i": 17, "v": 20, "tip": "18 Aug: 20 sessions"}, {"i": 18, "v": 28, "tip": "19 Aug: 28 sessions"}, {"i": 19, "v": 41, "tip": "20 Aug: 41 sessions"}, {"i": 20, "v": 22, "tip": "21 Aug: 22 sessions"}, {"i": 21, "v": 13, "tip": "22 Aug: 13 sessions"}, {"i": 22, "v": 14, "tip": "23 Aug: 14 sessions"}, {"i": 23, "v": 7, "tip": "24 Aug: 7 sessions"}, {"i": 24, "v": 23, "tip": "25 Aug: 23 sessions"}, {"i": 25, "v": 26, "tip": "26 Aug: 26 sessions"}, {"i": 26, "v": 24, "tip": "27 Aug: 24 sessions"}, {"i": 27, "v": 15, "tip": "28 Aug: 15 sessions"}, {"i": 28, "v": 13, "tip": "29 Aug: 13 sessions"}, {"i": 29, "v": 25, "tip": "30 Aug: 25 sessions"}, {"i": 30, "v": 54, "tip": "31 Aug: 54 sessions"}, {"i": 31, "v": 30, "tip": "1 Sep: 30 sessions"}, {"i": 32, "v": 32, "tip": "2 Sep: 32 sessions"}, {"i": 33, "v": 15, "tip": "3 Sep: 15 sessions"}, {"i": 34, "v": 15, "tip": "4 Sep: 15 sessions"}, {"i": 35, "v": 21, "tip": "5 Sep: 21 sessions"}, {"i": 36, "v": 26, "tip": "6 Sep: 26 sessions"}, {"i": 37, "v": 18, "tip": "7 Sep: 18 sessions"}, {"i": 38, "v": 36, "tip": "8 Sep: 36 sessions"}, {"i": 39, "v": 32, "tip": "9 Sep: 32 sessions"}, {"i": 40, "v": 28, "tip": "10 Sep: 28 sessions"}, {"i": 41, "v": 25, "tip": "11 Sep: 25 sessions"}, {"i": 42, "v": 18, "tip": "12 Sep: 18 sessions"}, {"i": 43, "v": 17, "tip": "13 Sep: 17 sessions"}, {"i": 44, "v": 27, "tip": "14 Sep: 27 sessions"}, {"i": 45, "v": 30, "tip": "15 Sep: 30 sessions"}, {"i": 46, "v": 69, "tip": "16 Sep: 69 sessions"}, {"i": 47, "v": 67, "tip": "17 Sep: 67 sessions"}, {"i": 48, "v": 66, "tip": "18 Sep: 66 sessions"}, {"i": 49, "v": 54, "tip": "19 Sep: 54 sessions"}, {"i": 50, "v": 54, "tip": "20 Sep: 54 sessions"}, {"i": 51, "v": 70, "tip": "21 Sep: 70 sessions"}, {"i": 52, "v": 108, "tip": "22 Sep: 108 sessions", "t": "108"}, {"i": 53, "v": 84, "tip": "23 Sep: 84 sessions"}, {"i": 54, "v": 78, "tip": "24 Sep: 78 sessions"}, {"i": 55, "v": 85, "tip": "25 Sep: 85 sessions"}, {"i": 56, "v": 87, "tip": "26 Sep: 87 sessions"}, {"i": 57, "v": 95, "tip": "27 Sep: 95 sessions"}, {"i": 58, "v": 94, "tip": "28 Sep: 94 sessions"}, {"i": 59, "v": 54, "tip": "29 Sep: 54 sessions"}, {"i": 60, "v": 104, "tip": "30 Sep: 104 sessions", "t": "104"}, {"i": 61, "v": 79, "tip": "1 Oct: 79 sessions"}, {"i": 62, "v": 51, "tip": "2 Oct: 51 sessions"}, {"i": 63, "v": 49, "tip": "3 Oct: 49 sessions"}, {"i": 64, "v": 37, "tip": "4 Oct: 37 sessions", "t": "37", "anchor": "start"}, {"i": 65, "v": 74, "tip": "5 Oct: 74 sessions"}, {"i": 66, "v": 48, "tip": "6 Oct: 48 sessions"}, {"i": 67, "v": 40, "tip": "7 Oct: 40 sessions"}, {"i": 68, "v": 31, "tip": "8 Oct: 31 sessions"}, {"i": 69, "v": 53, "tip": "9 Oct: 53 sessions"}, {"i": 70, "v": 32, "tip": "10 Oct: 32 sessions"}, {"i": 71, "v": 39, "tip": "11 Oct: 39 sessions"}, {"i": 72, "v": 30, "tip": "12 Oct: 30 sessions"}, {"i": 73, "v": 38, "tip": "13 Oct: 38 sessions"}, {"i": 74, "v": 66, "tip": "14 Oct: 66 sessions"}, {"i": 75, "v": 40, "tip": "15 Oct: 40 sessions"}, {"i": 76, "v": 29, "tip": "16 Oct: 29 sessions"}, {"i": 77, "v": 31, "tip": "17 Oct: 31 sessions"}, {"i": 78, "v": 38, "tip": "18 Oct: 38 sessions"}, {"i": 79, "v": 51, "tip": "19 Oct: 51 sessions"}, {"i": 80, "v": 55, "tip": "20 Oct: 55 sessions"}, {"i": 81, "v": 79, "tip": "21 Oct: 79 sessions"}, {"i": 82, "v": 77, "tip": "22 Oct: 77 sessions"}, {"i": 83, "v": 47, "tip": "23 Oct: 47 sessions"}, {"i": 84, "v": 43, "tip": "24 Oct: 43 sessions"}, {"i": 85, "v": 50, "tip": "25 Oct: 50 sessions"}, {"i": 86, "v": 54, "tip": "26 Oct: 54 sessions"}, {"i": 87, "v": 54, "tip": "27 Oct: 54 sessions"}, {"i": 88, "v": 48, "tip": "28 Oct: 48 sessions"}, {"i": 89, "v": 55, "tip": "29 Oct: 55 sessions"}, {"i": 90, "v": 58, "tip": "30 Oct: 58 sessions"}, {"i": 91, "v": 56, "tip": "31 Oct: 56 sessions"}, {"i": 92, "v": 52, "tip": "1 Nov: 52 sessions"}]}]}, "sources": {"type": "bars", "fmt": "n", "reserve": "3rem", "src": "State of the Race doc: Digital, table 'Source, 16 to 30 Sep'", "key": [{"c": "neu", "t": "Unpaid"}, {"c": "hatch", "t": "Paid channel"}], "rows": [{"l": "Direct", "segs": [{"v": 602, "c": "neu"}], "val": "602"}, {"l": "Google organic", "segs": [{"v": 212, "c": "neu"}], "val": "212"}, {"l": "Instagram paid", "segs": [{"v": 140, "c": "hatch"}], "val": "140"}, {"l": "Bing, DuckDuckGo, Yahoo", "segs": [{"v": 62, "c": "neu"}], "val": "62"}, {"l": "Google paid search", "segs": [{"v": 26, "c": "hatch"}], "val": "26"}, {"l": "Facebook paid", "segs": [{"v": 18, "c": "hatch"}], "val": "18"}, {"l": "Simpli.fi display", "segs": [{"v": 16, "c": "hatch"}], "val": "16"}, {"l": "Facebook organic", "segs": [{"v": 14, "c": "neu"}], "val": "14"}, {"l": "Email (Wix links)", "segs": [{"v": 9, "c": "neu"}], "val": "9"}, {"l": "Everything else", "segs": [{"v": 53, "c": "neu"}], "val": "53"}]}, "email": {"type": "bars", "fmt": "%", "max": 100, "wide": true, "reserve": "13rem", "src": "Wix campaign statistics read 2 Nov about 11:20 AM (18 Oct onward); earlier sends as read 26 and 27 Oct", "key": [{"c": "neu", "t": "Open rate"}], "rows": [{"l": "31 Aug", "sub": "It's my birthday! Here is my ask.", "segs": [{"v": 62, "c": "neu"}], "val": "62% · 79 of 127 · 10 clicks"}, {"l": "8 Sep", "sub": "Ballots go out in 10 days", "segs": [{"v": 60, "c": "neu"}], "val": "60% · 76 of 126 · 6 clicks"}, {"l": "14 Sep", "sub": "50 days and 35,000 doors", "segs": [{"v": 46, "c": "neu"}], "val": "46% · 59 of 129 · 3 clicks"}, {"l": "21 Sep", "sub": "Neighbors talking to neighbors", "segs": [{"v": 50, "c": "neu"}], "val": "50% · 65 of 129 · 2 clicks"}, {"l": "28 Sep", "sub": "You can vote now", "segs": [{"v": 60, "c": "neu"}], "val": "60% · 78 of 129 · 1 click"}, {"l": "30 Sep", "sub": "Is your Jen Fox sign still standing?", "segs": [{"v": 48, "c": "neu"}], "val": "48% · 62 of 129 · 2 clicks"}, {"l": "5 Oct", "sub": "Thank you, and one deadline", "segs": [{"v": 66, "c": "neu"}], "val": "66% · 85 of 129 · 11 clicks"}, {"l": "12 Oct", "sub": "Three weeks to go", "segs": [{"v": 57, "c": "neu"}], "val": "57% · 73 of 128 · 5 clicks"}, {"l": "16 Oct", "sub": "Tomorrow morning: knock with Jen and special guests", "segs": [{"v": 47, "c": "neu"}], "val": "47% · 60 of 128 · 4 clicks"}, {"l": "18 Oct", "sub": "Tell one neighbor why (Issue 8)", "segs": [{"v": 59, "c": "neu"}], "val": "59% · 76 of 128 · 2 clicks"}, {"l": "20 Oct", "sub": "Jen in the news", "segs": [{"v": 63, "c": "neu"}], "val": "63% · 81 of 128 · 8 clicks"}, {"l": "26 Oct", "sub": "Come knock with us (Issue 9)", "segs": [{"v": 46, "c": "neu"}], "val": "46% · 58 of 127 · 3 clicks"}, {"l": "28 Oct", "sub": "Walk with Jen in the Monster Bash Parade", "segs": [{"v": 48, "c": "neu"}], "val": "48% · 62 of 128 · 1 click"}, {"l": "30 Oct", "sub": "Jen in the news: the voter guide and two interviews", "segs": [{"v": 59, "c": "neu"}], "val": "59% · 75 of 128 · 8 clicks"}]}, "ads": {"type": "dots", "wide": true, "min": 0, "max": 300, "ticks": [0, 100, 200, 300], "unit": "K", "src": "State of the Race doc: The race, 'Beck's reach' (five DFL House Caucus ads and their impression ranges); Digital, 'Ads (Meta Ad Library, 1 Oct)' (250,000 to 300,000)", "rows": [{"l": "Jen Fox for House video ad", "sub": "16 to 29 Sep, the campaign's own", "a": {"v": 250, "c": "fox", "round": true, "n": "low end", "t": "250K"}, "b": {"v": 300, "c": "fox", "round": true, "n": "high end", "t": "300K"}, "hl": true}, {"l": "Caucus video, 'won't stop talking'", "sub": "against Beck, 10 to 29 Sep", "a": {"v": 175, "c": "fox", "round": true, "n": "low end", "t": "175K"}, "b": {"v": 200, "c": "fox", "round": true, "n": "high end", "t": "200K"}}, {"l": "Caucus healthcare ad", "sub": "against Beck, active since 28 Aug", "a": {"v": 150, "c": "fox", "round": true, "n": "low end", "t": "150K"}, "b": {"v": 175, "c": "fox", "round": true, "n": "high end", "t": "175K"}}, {"l": "Caucus video, second ad", "sub": "against Beck, same creative, 10 to 26 Sep", "a": {"v": 100, "c": "fox", "round": true, "n": "low end", "t": "100K"}, "b": {"v": 125, "c": "fox", "round": true, "n": "high end", "t": "125K"}}, {"l": "Caucus abortion-ban ad", "sub": "against Beck, active since 28 Sep", "a": {"v": 35, "c": "fox", "round": true, "n": "low end", "t": "35K"}, "b": {"v": 40, "c": "fox", "round": true, "n": "high end", "t": "40K"}}, {"l": "Caucus platform ad", "sub": "against Beck, active since 28 Aug", "a": {"v": 25, "c": "fox", "round": true, "n": "low end", "t": "25K"}, "b": {"v": 30, "c": "fox", "round": true, "n": "high end", "t": "30K"}}]}, "cal": {"type": "days", "n": 34, "from": "1 Oct", "to": "3 Nov, Election Day", "aria": "Calendar strip, 1 Oct to 3 Nov 2026", "src": "Campaign calendar and public events page, with public reporting and voting dates, 1 Oct to 3 Nov 2026", "ev": {"0": {"d": "1 Oct", "s": "1", "t": "Little and Fox town hall, 6 pm (campaign calendar)", "k": "v"}, "5": {"d": "6 Oct", "s": "6/7", "t": "Podcast recording, 2 pm (campaign calendar)", "k": "v"}, "6": {"d": "7 Oct", "s": "", "t": "Childcare for All town hall, Pleasant Hill Library, 6 pm, after the 5 pm Door Knock Kick Off (campaign calendar)", "k": "v"}, "12": {"d": "13 Oct", "s": "13", "t": "Advance voter registration deadline (on the campaign's vote page, seen 5 Oct)", "k": "v"}, "15": {"d": "16 Oct", "s": "16", "t": "Early in-person voting date published on the campaign's vote page", "k": "v"}, "18": {"d": "19 Oct", "s": "19/20", "t": "Close of books for the pre-general finance report", "k": "v"}, "19": {"d": "20 Oct", "s": "", "t": "Next-business-day notices begin for contributions over $500 (through 2 Nov)", "k": "v"}, "25": {"d": "26 Oct", "s": "26", "t": "Pre-general finance report due; first look at Beck's and Fox's money since 20 Jul", "k": "v"}, "30": {"d": "31 Oct", "s": "31/1", "t": "Last scheduled weekly door knock", "k": "v"}, "31": {"d": "1 Nov", "s": "", "t": "Onward Together get-out-the-vote door knock, 2 to 4 pm, on the public events page", "k": "v"}, "33": {"d": "3 Nov", "s": "3 Nov", "t": "Election Day. Live precinct returns are expected in the Secretary of State results files", "k": "e"}}}, "cal_table": {"type": "table", "src": "Campaign calendar and public events page, with public reporting and voting dates, 1 Oct to 3 Nov 2026", "head": ["Date", "What happens"], "rows": [["1 Oct", "Little and Fox town hall, 6 pm (campaign calendar)"], ["6 Oct", "Podcast recording, 2 pm (campaign calendar)"], ["7 Oct", "Childcare for All town hall, Pleasant Hill Library, 6 pm, after the 5 pm Door Knock Kick Off (campaign calendar)"], ["13 Oct", "Advance voter registration deadline (on the campaign's vote page, seen 5 Oct)"], ["16 Oct", "Early in-person voting date published on the campaign's vote page"], ["19 Oct", "Close of books for the pre-general finance report"], ["20 Oct", "Next-business-day notices begin for contributions over $500 (through 2 Nov)"], ["26 Oct", "Pre-general finance report due; first look at Beck's and Fox's money since 20 Jul"], ["31 Oct", "Last scheduled weekly door knock"], ["1 Nov", "Onward Together get-out-the-vote door knock, 2 to 4 pm, on the public events page"], ["3 Nov", "Election Day. Live precinct returns are expected in the Secretary of State results files"]]}, "ev_prec_tbl": {"type": "table", "numcols": [1, 2, 3, 4, 5, 6, 7], "src": "Sample values for the portfolio demo, not VoteBuilder data (Voted, By mail, Ballots out and the two shares); Fox 2024 and 2022 early from MN SOS official 2022 and certified 2024 precinct results", "head": ["Precinct", "Fox 2024", "Voted", "By mail", "Ballots out", "2022 early", "Of 2022 early", "Of 2022 voters"], "rows": [["Hastings W-1 P-1", "51.1%", "450", "80", "30", "314", "143%", "40.1%"], ["Hastings W-1 P-2", "42.9%", "300", "60", "50", "213", "141%", "24.1%"], ["Hastings W-2 P-2", "50.2%", "450", "110", "40", "338", "133%", "41.2%"], ["Hastings W-2 P-3", "49.5%", "400", "60", "50", "275", "145%", "31.6%"], ["Hastings W-3 P-1", "47.9%", "450", "90", "40", "312", "144%", "32.6%"], ["Hastings W-3 P-2", "48.5%", "300", "60", "30", "289", "104%", "23.1%"], ["Hastings W-4 P-1", "45.2%", "550", "100", "30", "345", "159%", "32.5%"], ["Hastings W-4 P-2", "48.1%", "400", "90", "40", "291", "137%", "29.5%"], ["Nininger Twp", "37.4%", "100", "20", "10", "49", "204%", "19.5%"], ["Cottage Grove P-3", "54.5%", "750", "140", "60", "541", "139%", "49.3%"], ["Cottage Grove P-4", "51.9%", "750", "120", "40", "630", "119%", "34.7%"], ["Cottage Grove P-5", "51.1%", "1,400", "150", "60", "1,007", "139%", "48.9%"], ["Cottage Grove P-7", "49.8%", "500", "80", "30", "365", "137%", "45.7%"], ["Denmark Twp P-1", "42.3%", "200", "50", "10", "156", "128%", "24.9%"], ["District (incl. W-2 P-1)", "49.0%", "7,000", "1,210", "520", "5,126", "137%", "36.1%"]]}, "poll_tbl": {"type": "table", "src": "SOS Poll Finder data service (pollfinder.sos.mn.gov), read 26 Oct 2026; 2024 Hastings list from the Hastings Star Gazette, Nov 2024", "head": ["Precinct", "Election Day polling place, 3 Nov"], "rows": [["Hastings W-1 P-1", "Hastings City Hall, 101 4th St E"], ["Hastings W-1 P-2", "Hope Lutheran Church, 16898 Michael Ave"], ["Hastings W-2 P-2", "St. John's Lutheran Church, 202 8th St W"], ["Hastings W-2 P-3", "Our Saviour's Lutheran Church, 400 9th St W"], ["Hastings W-3 P-1", "Calvary Christian Church, 907 15th St W"], ["Hastings W-3 P-2", "United Methodist Church, 615 15th St W"], ["Hastings W-4 P-1", "St. Philip's Lutheran Church, 1401 15th St W"], ["Hastings W-4 P-2", "Crossroads Church, 225 33rd St W"], ["Nininger Twp", "Nininger Town Hall, 12390 Ivanhoe Way"], ["Cottage Grove P-3", "Crestview Elementary School, 7830 80th St S"], ["Cottage Grove P-4", "District 833 Service Center, 7362 East Point Douglas Rd S"], ["Cottage Grove P-5", "Washington County Cottage Grove Service Center, 13000 Ravine Pkwy S"], ["Cottage Grove P-7", "Hillside Elementary School, 8177 Hillside Trl S"], ["Denmark Twp P-1", "Denmark Town Hall, 14008 90th St S"], ["Hastings W-2 P-1", "Mail-ballot precinct in 2024 (one or two voters)"]]}}</script>
+<script>
+(function(){
+var DATA={};try{DATA=JSON.parse(document.getElementById('brief-data').textContent)}catch(e){}
+var root=document.documentElement;
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function num(v){return Number(v).toLocaleString('en-US')}
+function fmt(v,f){if(f==='$')return '$'+num(v);if(f==='%')return num(v)+'%';return num(v)}
+var R={};
+R.tiles=function(el,d){
+  el.className='plot tiles';
+  el.innerHTML=d.items.map(function(t){
+    return '<div class="tile"><b data-count="'+t.v+'" data-pre="'+esc(t.pre||'')+'" data-suf="'+esc(t.suf||'')+'">'+esc(t.pre||'')+num(t.v)+esc(t.suf||'')+'</b><span>'+esc(t.l)+'</span><small>'+esc(t.s||'')+'</small></div>'}).join('');
+};
+function keyHtml(d){
+  if(!d.key)return '';
+  return '<div class="key">'+d.key.map(function(k){return '<span><i class="c-'+k.c+(k.dot?' dot':'')+'"></i>'+esc(k.t)+'</span>'}).join('')+'</div>';
+}
+R.bars=function(el,d){
+  var max=d.max||0,res=d.reserve||'7rem';
+  if(!d.max)d.rows.forEach(function(r){(r.bars||[{segs:r.segs}]).forEach(function(b){var s=0;b.segs.forEach(function(g){s+=g.v});if(s>max)max=s})});
+  var h=keyHtml(d)+'<div class="bars'+(d.wide?' wide':'')+'">';
+  d.rows.forEach(function(r){
+    var bars=r.bars||[{segs:r.segs,val:r.val}];
+    h+='<div class="row'+(r.hl?' hl':'')+'"><div class="lab">'+esc(r.l)+(r.sub?'<small>'+esc(r.sub)+'</small>':'')+'</div><div class="stack">';
+    bars.forEach(function(b){
+      var sum=0;b.segs.forEach(function(g){sum+=g.v});
+      h+='<div class="track'+(bars.length>1?' thin':'')+'">';
+      b.segs.forEach(function(g){
+        var fr=g.v/max;if(g.v<=0)return;
+        h+='<span class="seg c-'+g.c+'" style="width:calc((100% - '+res+') * '+fr.toFixed(5)+')" title="'+esc((g.t?g.t+': ':'')+fmt(g.v,d.fmt))+'">'+(g.t&&fr>0.13&&bars.length===1?'<em>'+esc(g.t)+'</em>':'')+'</span>';
+      });
+      if(b.ref)h+='<span class="ref" style="left:calc((100% - '+res+') * '+(b.ref.v/max).toFixed(5)+')" title="'+esc(b.ref.t)+'"></span>';
+      h+='<span class="v">'+esc(b.val!=null?b.val:fmt(sum,d.fmt))+'</span></div>';
+    });
+    h+='</div></div>';
+  });
+  el.innerHTML=h+'</div>';
+};
+R.dots=function(el,d){
+  function pos(v){return ((v-d.min)/(d.max-d.min)*100).toFixed(3)+'%'}
+  var ax='<div class="row"><div></div><div class="daxis">'+d.ticks.map(function(t){return '<span style="left:'+pos(t)+'">'+esc(t+(d.unit||''))+'</span>'}).join('')+'</div></div>';
+  var h=keyHtml(d)+'<div class="dots'+(d.wide?' wide':'')+'">'+ax;
+  d.rows.forEach(function(r){
+    var lo=r.a.v<=r.b.v?r.a:r.b,hi=lo===r.a?r.b:r.a;
+    h+='<div class="row'+(r.hl?' hl':'')+'"><div class="lab">'+esc(r.l)+(r.sub?'<small>'+esc(r.sub)+'</small>':'')+'</div><div class="dtrack">';
+    d.ticks.forEach(function(t){h+='<span class="tick" style="left:'+pos(t)+'"></span>'});
+    h+='<span class="rng" style="left:'+pos(lo.v)+';width:calc('+pos(hi.v)+' - '+pos(lo.v)+')"></span>';
+    [lo,hi].forEach(function(p,i){
+      h+='<span class="d c-'+p.c+(p.round?' round':'')+(lo.v===hi.v&&p.round?' tie':'')+'" style="left:'+pos(p.v)+'" title="'+esc(p.n+' '+p.v+(d.unit||''))+'"></span>';
+      h+='<span class="n '+(i?'r':'l')+'" style="left:'+pos(p.v)+'">'+esc(p.t!=null?p.t:p.v)+'</span>';
+    });
+    h+='</div></div>';
+  });
+  el.innerHTML=h+'</div>';
+};
+R.line=function(el,d){
+  var W=Math.max(300,el.clientWidth||700),H=d.h||270,m={l:34,r:d.mr||24,t:26,b:30};
+  var n=d.n,iw=W-m.l-m.r,ih=H-m.t-m.b;
+  function x(i){return m.l+(n>1?i/(n-1)*iw:0)}
+  function y(v){return m.t+ih-(v/d.ymax)*ih}
+  var s='<svg class="line" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(d.aria)+'">';
+  d.yticks.forEach(function(t){s+='<line class="'+(t===0?'axis':'grid')+'" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y(t)+'" y2="'+y(t)+'"/><text x="'+(m.l-6)+'" y="'+(y(t)+4)+'" text-anchor="end">'+t+'</text>'});
+  (d.xlabels||[]).forEach(function(l){s+='<text x="'+x(l.i)+'" y="'+(H-8)+'" text-anchor="'+(l.i===0?'start':l.i===n-1?'end':'middle')+'">'+esc(l.t)+'</text>'});
+  (d.vmarks||[]).forEach(function(v){s+='<line class="mark" x1="'+x(v.i)+'" x2="'+x(v.i)+'" y1="'+m.t+'" y2="'+(m.t+ih)+'"/><text class="strong lbl" x="'+(x(v.i)-6)+'" y="'+(m.t+10)+'" text-anchor="end">'+esc(v.t)+'</text>'});
+  d.series.forEach(function(se){
+    var p=se.pts.map(function(q,k){return (k?'L':'M')+x(q.i).toFixed(1)+' '+y(q.v).toFixed(1)}).join('');
+    s+='<path class="ln" pathLength="1" d="'+p+'" style="stroke:var(--'+se.c+')'+(se.dash?';opacity:.55':'')+'"/>';
+    se.pts.forEach(function(q){
+      if(se.dots||q.t)s+='<circle class="pt" cx="'+x(q.i)+'" cy="'+y(q.v)+'" r="'+(q.t?4:2)+'" style="fill:var(--'+se.c+')"><title>'+esc(q.tip||'')+'</title></circle>';
+      if(q.t){var a=q.anchor||'middle';s+='<text class="strong lbl" x="'+(x(q.i)+(a==='start'?7:a==='end'?-7:0))+'" y="'+(y(q.v)-(a==='middle'?9:-4))+'" text-anchor="'+a+'">'+esc(q.t)+'</text>'}
+    });
+  });
+  el.innerHTML=s+'</svg>';
+};
+R.table=function(el,d){
+  var h='<div class="tw"><table class="plain'+(d.cls?' '+d.cls:'')+'"><thead><tr>'+d.head.map(function(c,i){return '<th'+(d.numcols&&d.numcols.indexOf(i)>-1?' class="num"':'')+'>'+esc(c)+'</th>'}).join('')+'</tr></thead><tbody>';
+  d.rows.forEach(function(r){h+='<tr>'+r.map(function(c,i){return '<td'+(d.numcols&&d.numcols.indexOf(i)>-1?' class="num"':'')+'>'+esc(c)+'</td>'}).join('')+'</tr>'});
+  el.innerHTML=h+'</tbody></table></div>';
+};
+function chips(a){
+  if(!a.length)return '<span class="chip none">none of the eight themes</span>';
+  return a.map(function(c){return c.charAt(0)==='~'?'<span class="chip o">'+esc(c.slice(1))+'</span>':'<span class="chip">'+esc(c)+'</span>'}).join('');
+}
+R.forum=function(el,d){
+  var h='<div class="tw"><table class="plain forum"><thead><tr><th>Question (time)</th><th>Fox</th><th>Beck</th></tr></thead><tbody>';
+  d.rows.forEach(function(r){h+='<tr><td><b>'+esc(r.q)+'</b><small>'+esc(r.time)+'</small></td><td>'+chips(r.fox)+'</td><td>'+chips(r.beck)+'</td></tr>'});
+  el.innerHTML=h+'</tbody></table></div>';
+};
+R.blocks=function(el,d){
+  var base=(el.clientWidth||700)<520?104:150,max=0;d.rows.forEach(function(r){if(r.n>max)max=r.n});
+  var h='<div class="blocks">';
+  d.rows.forEach(function(r){
+    var side=Math.max(14,Math.round(Math.sqrt(r.n/max)*base)),inner=Math.max(3,Math.round(Math.sqrt(r.exp/max)*base));
+    h+='<div class="blk"><div class="sq" style="width:'+side+'px;height:'+side+'px" title="'+esc(r.l+': '+num(r.n)+' people')+'"><i class="c-'+r.c+'" style="width:'+inner+'px;height:'+inner+'px"></i></div><div class="t">'+esc(r.l)+'<small>'+esc(r.nt)+' people</small><small>'+esc(r.et)+' expected (est.)</small><small>'+esc(r.cgt)+' in Cottage Grove</small></div></div>';
+  });
+  el.innerHTML=h+'</div>';
+};
+R.knock=function(el,d){
+  var h='<div class="tw"><table class="plain knock kn"><thead><tr><th>Date</th><th>VAN event</th><th>Campaign calendar</th><th>Public events page</th></tr></thead><tbody>';
+  d.rows.forEach(function(r){
+    h+='<tr><td><b>'+esc(r[0])+'</b></td>';
+    for(var i=1;i<4;i++){var on=r[i].charAt(0)!=='-';h+='<td><span class="sqm '+(on?'on':'off')+'"></span>'+esc(on?r[i]:r[i].slice(1))+'</td>'}
+    h+='</tr>';
+  });
+  el.innerHTML=h+'</tbody></table></div>';
+};
+R.days=function(el,d){
+  var h='<div class="days" role="img" aria-label="'+esc(d.aria)+'">';
+  for(var i=0;i<d.n;i++){var e=d.ev[String(i)];h+='<div class="day'+(e?(e.k==='e'?' eday':' ev'):'')+'" title="'+esc(e?e.d+': '+e.t:'')+'">'+(e?'<span>'+esc(e.s)+'</span>':'')+'</div>'}
+  el.innerHTML=h+'</div><div class="daysax"><span>'+esc(d.from)+'</span><span>'+esc(d.to)+'</span></div>';
+};
+R.rec=function(el,d){
+  function p(s){return (s/d.total*100).toFixed(3)+'%'}
+  var h=keyHtml(d)+'<div class="rec" role="img" aria-label="'+esc(d.aria)+'">';
+  d.segs.forEach(function(g){h+='<i class="c-'+g.c+'" style="left:'+p(g.a)+';width:'+p(g.b-g.a)+'" title="'+esc(g.t)+'"></i>'});
+  h+='</div><div class="recax">';
+  d.labels.forEach(function(l){h+='<span style="left:'+p(l.at)+(l.end?';transform:translateX(-100%)':'')+'">'+esc(l.t)+'</span>'});
+  el.innerHTML=h+'</div>';
+};
+function renderAll(only){
+  var plots=document.querySelectorAll('.plot[data-chart]');
+  for(var i=0;i<plots.length;i++){
+    var el=plots[i],d=DATA[el.getAttribute('data-chart')];
+    if(!d){if(!only)el.innerHTML='<div class="pending">Chart slot. Data not loaded yet.</div>';continue}
+    if(only&&only.indexOf(d.type)<0)continue;
+    try{R[d.type](el,d)}catch(e){el.innerHTML='<div class="pending">This chart could not be drawn.</div>'}
+  }
+}
+renderAll();
+/* audit table */
+var au=document.getElementById('audit-pre');
+if(au){var out=[];Object.keys(DATA).forEach(function(k){var d=DATA[k],c={};Object.keys(d).forEach(function(q){if(q!=='src'&&q!=='type')c[q]=d[q]});out.push(k+'\nSOURCE: '+d.src+'\nFIGURES: '+JSON.stringify(c))});au.textContent=out.join('\n\n')}
+/* count-up and reveal */
+function finish(b){b.textContent=b.getAttribute('data-pre')+num(b.getAttribute('data-count'))+b.getAttribute('data-suf')}
+function countUp(fig){
+  var bs=fig.querySelectorAll('b[data-count]');
+  Array.prototype.forEach.call(bs,function(b){
+    if(b._done)return;b._done=1;var end=Number(b.getAttribute('data-count')),t0=null,dur=1100;
+    function step(t){if(!t0)t0=t;var k=Math.min(1,(t-t0)/dur);k=1-Math.pow(1-k,3);b.textContent=b.getAttribute('data-pre')+num(Math.round(end*k))+b.getAttribute('data-suf');if(k<1&&!b._stop)requestAnimationFrame(step);else finish(b)}
+    requestAnimationFrame(step);
+  });
+}
+var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var figs=document.querySelectorAll('figure.chart');
+function showAll(){Array.prototype.forEach.call(figs,function(f){f.classList.add('in');Array.prototype.forEach.call(f.querySelectorAll('b[data-count]'),function(b){b._stop=1;b._done=1;finish(b)})})}
+if(!reduce&&'IntersectionObserver' in window){
+  root.classList.add('anim');
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');countUp(e.target);io.unobserve(e.target)}})},{threshold:0.15});
+  Array.prototype.forEach.call(figs,function(f){io.observe(f)});
+  window.addEventListener('beforeprint',showAll);
+  if(window.matchMedia){var mp=window.matchMedia('print');if(mp.addEventListener)mp.addEventListener('change',function(e){if(e.matches)showAll()})}
+}
+var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){renderAll(['line','blocks'])},150)});
+})();
+</script>
+</body>
+</html>

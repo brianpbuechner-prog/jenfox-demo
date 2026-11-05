@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/signs/demo-api.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Sign pickup · Jen Fox for 41B</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap">
+<link rel="stylesheet" href="/signs/app.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<style>
+.wrap.org{max-width:980px}
+#app{display:flex;flex-direction:column;gap:12px}
+#omap{height:440px;border:1px solid var(--line)}
+#olegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.75rem;color:var(--muted);margin-top:8px}
+#olegend i{display:inline-block;width:11px;height:11px;margin-right:5px;vertical-align:-1px}
+.olabel{background:transparent;border:0;font:700 12px Poppins,sans-serif;color:#222;text-align:center;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;white-space:nowrap;width:auto!important;height:auto!important;transform:translate(-50%,-50%)}
+.olabel span{font-weight:400;font-size:11px}
+.sendrow{align-items:center}
+.sendrow.is-sent .who{color:var(--muted)}
+.sentbox{display:flex;gap:5px;align-items:center;margin:0 0 0 4px;white-space:nowrap}
+.sentbox input{width:auto;margin:0}
+.stat b small{font-size:.9rem;color:var(--muted);font-weight:500}
+.wtab{border-collapse:collapse;font-size:.9rem}.wtab td,.wtab th{padding:3px 14px 3px 0;text-align:left}.wtab th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+#rmap{height:320px;border:1px solid var(--line);margin-bottom:8px}
+@media (max-width:640px){ #omap{height:340px} .sendrow{flex-wrap:wrap} }
+</style>
+<script src="/signs/turfmap.js" defer></script>
+<script src="/signs/pull.js"></script>
+<script src="/signs/sheet.js" defer></script>
+</head>
+<body>
+<div class="demo-strip">Portfolio demo of the yard sign app. Every household, address and name here is made up, and nothing you tap is saved beyond this browser tab. <a href="/signs/">All screens</a> · <a href="/">Team site</a></div>
+<div class="bar"><div class="in" id="hdr"><div class="eyebrow">Jen Fox for 41B</div><h1>Yard signs</h1><div class="sub" id="sub">Loading…</div></div></div>
+<div class="wrap org"><div id="stats"></div>
+<div class="card" id="mapbox" style="display:none"><p class="lbl">Areas</p><div id="omap"></div><div id="olegend"></div><p class="small muted" style="margin:6px 0 0">Tap an area for its route. Updates every 90 seconds.</p></div>
+<div id="app"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+let D = null, view = 'home', openRoute = null, busy = false, editNote = null, q = '', editVol = null, editSign = null;
+const SIZES = ['S', 'L', 'XL', 'S+L', 'Other'];
+// " · L" for one sign, " · 3 signs, S" when a household has more than one
+const sizeLbl = s => (s.count > 1 ? ' · ' + s.count + ' signs' + (s.size ? ', ' + esc(s.size) : '') : s.size ? ' · ' + esc(s.size) : '');
+const CITIES = ['Hastings', 'Cottage Grove', 'Denmark Twp', 'Other'];
+const $ = s => document.querySelector(s);
+// Find any sign, whatever its status, by name, address, phone or S-number. Every word typed has to appear somewhere.
+const norm = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function findSigns(text){
+  const words = norm(text).split(' ').filter(Boolean);
+  if(!words.length) return [];
+  const digits = String(text).replace(/\D/g, '');
+  return (D.all || []).filter(s => {
+    const hay = norm([s.name, s.address, s.sid].join(' ')) + ' ' + String(s.phone).replace(/\D/g, '');
+    return words.every(w => hay.includes(w)) || (digits.length >= 4 && String(s.phone).replace(/\D/g, '').includes(digits));
+  }).slice(0, 30);
+}
+function renderSearch(){
+  const box = $('#results'); if(!box) return;
+  const hits = findSigns(q);
+  if(!q.trim()){ box.innerHTML = ''; return; }
+  if(!hits.length){ box.innerHTML = `<div class="addr" style="margin-top:10px">No sign matches "${esc(q.trim())}". Try just the last name or the street.</div>`; return; }
+  const pill = s => s.pickup ? `<span class="pill ${s.pickup==='Picked up'?'good':s.pickup==='To pick up'?'wait':'warn'}">${esc(s.pickup)}</span>` : '<span class="pill wait">not on the pickup list</span>';
+  box.innerHTML = hits.map(s => `<div class="row" style="display:block">
+      <div class="who">${esc(s.name)} ${pill(s)} ${s.route ? `<button class="pill new" style="border:0;cursor:pointer;font-family:inherit" onclick="openRoute=${s.routeIdx};view='route';render();scrollTo(0,0)">${esc(s.route)} ›</button>` : ''}</div>
+      <div class="addr">${esc(s.address)}${sizeLbl(s)}${s.phone ? ' · <a href="tel:' + esc(s.phone) + '">' + esc(s.phone) + '</a>' : ''}</div>
+      ${s.pickupBy ? `<div class="addr">${esc(s.pickup.toLowerCase())} by ${esc(s.pickupBy)}</div>` : ''}
+      <div class="tools" style="margin-top:6px;align-items:center">
+        <button class="btn soft sm" onclick="editSign = (editSign === '${s.id}' ? null : '${s.id}'); renderSearch()">${editSign===s.id?'Close':'Edit'}</button></div>
+      ${editSign === s.id ? editPanel(s) : ''}
+    </div>`).join('');
+}
+// Edit a household. Two saves on purpose: the details never affect routing, the address does,
+// so they are separate requests and the address one says what it is about to do.
+function editPanel(s){
+  return `<div class="card" style="margin-top:8px;padding:10px;background:var(--soft,#f7f7f7)">
+    <p class="lbl">Details</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <input id="df_${s.id}" placeholder="First name" value="${esc(s.first)}">
+      <input id="dl_${s.id}" placeholder="Last name" value="${esc(s.last)}"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <input id="dp_${s.id}" placeholder="Phone" inputmode="tel" value="${esc(s.phone)}">
+      <input id="de_${s.id}" placeholder="Email" inputmode="email" value="${esc(s.email)}"></div>
+    <div style="display:grid;grid-template-columns:1fr 76px 1fr;gap:8px;margin-top:8px;align-items:center">
+      <select id="dz_${s.id}" aria-label="Sign size">${SIZES.map(o => `<option ${o === s.size ? 'selected' : ''}>${o}</option>`).join('')}</select>
+      <input id="dn_${s.id}" type="number" min="1" max="20" inputmode="numeric" aria-label="Number of signs" title="Number of signs" value="${s.count || 1}">
+      <label class="small" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="dr_${s.id}" ${s.rebar ? 'checked' : ''} style="width:auto;margin:0"> Needs rebar</label></div>
+    <div class="acts"><button class="btn ok" onclick="post({action:'setDetails',signId:'${s.id}',first:$('#df_${s.id}').value,last:$('#dl_${s.id}').value,phone:$('#dp_${s.id}').value,email:$('#de_${s.id}').value,size:$('#dz_${s.id}').value,count:$('#dn_${s.id}').value,rebar:$('#dr_${s.id}').checked},'Saved')">Save details</button></div>
+    <p class="lbl" style="margin-top:14px">Address</p>
+    <div style="display:grid;grid-template-columns:90px 1fr;gap:8px">
+      <input id="ah_${s.id}" placeholder="House #" inputmode="numeric" value="${esc(s.house)}">
+      <input id="as_${s.id}" placeholder="Street, e.g. Olson Dr" value="${esc(s.street)}"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <input id="au_${s.id}" placeholder="Apt / unit" value="${esc(s.unit)}">
+      <select id="ac_${s.id}">${CITIES.map(o => `<option ${o === s.city ? 'selected' : ''}>${o}</option>`).join('')}</select></div>
+    <p class="small muted" style="margin:6px 0 0">Saving the address re-checks it on the map, so this stop can move to a different route.</p>
+    <div class="acts"><button class="btn ok" onclick="post({action:'fixAddress',signId:'${s.id}',house:$('#ah_${s.id}').value,street:$('#as_${s.id}').value,unit:$('#au_${s.id}').value,city:$('#ac_${s.id}').value},'Address saved. Re-checking the map.')">Save address</button></div>
+  </div>`;
+}
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
+const today = () => new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+
+async function boot(){
+  const a = await (await fetch('/api/auth')).json();
+  if(!a.signedIn) return signIn(a.clientId);
+  await refresh();
+}
+function signIn(clientId){
+  $('#sub').textContent = 'Organizer sign-in';
+  $('#app').innerHTML = `<div class="card center"><p class="lbl">Organizers</p><p class="small muted" style="margin:0 0 14px">Sign in with the Gmail address on the organizer list. Volunteers don't sign in; they use their route link.</p><div id="gbtn" style="display:flex;justify-content:center"></div><p class="err" id="autherr" style="display:none;margin-top:12px"></p></div>`;
+  const tryRender = () => {
+    if(!window.google || !google.accounts){ setTimeout(tryRender, 150); return; }
+    google.accounts.id.initialize({ client_id: clientId, callback: async (resp) => {
+      const r = await fetch('/api/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ credential: resp.credential }) });
+      const j = await r.json();
+      if(!r.ok){ const e=$('#autherr'); e.style.display='block'; e.textContent = j.error; return; }
+      await refresh();
+    }});
+    google.accounts.id.renderButton($('#gbtn'), { theme:'outline', size:'large', text:'signin_with', shape:'pill' });
+  };
+  tryRender();
+}
+async function refresh(){
+  const r = await fetch('/api/org');
+  if(r.status === 401) return boot();
+  D = await r.json(); render();
+}
+async function post(body, okMsg){
+  if(busy) return false;
+  busy = true;
+  // Every button goes flat while the request is out, so a click always looks like it did something.
+  const btns = [...document.querySelectorAll('#app button, #hdr button')];
+  btns.forEach(b => b.disabled = true);
+  toast('Working\u2026');
+  try {
+    const r = await fetch('/api/org', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    let j = null; try { j = await r.json(); } catch { j = null; }
+    if(!r.ok){ toast((j && j.error) || ('Could not save (' + r.status + '). Try again.')); return false; }
+    D = j; toast(okMsg || 'Saved');
+    try { render(); } catch(e) { console.error('render', e); }
+    return true;
+  } catch(e) {
+    // A dropped connection used to leave busy stuck true, which killed every button on the page silently.
+    console.error('post', e);
+    toast('Could not reach the server. Nothing was saved, try again.');
+    return false;
+  } finally {
+    busy = false;
+    btns.forEach(b => { b.disabled = false; });
+  }
+}
+function link(r){ return location.origin + '/signs/r/' + r.token; }
+async function copy(text, msg){ try { await navigator.clipboard.writeText(text); toast(msg || 'Copied'); } catch { prompt('Copy this link:', text); } }
+
+// ---- Home, rebuilt 31 Oct 2026 for area sweeps (volunteers drive every street; tapping stops is optional) ----
+const ACTIVE_MIN = 30;           // a route counts as "out now" if a stop was marked in the last 30 minutes
+const ago = iso => { if(!iso) return ''; const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : new Date(iso).toLocaleTimeString('en-US', { timeZone:'America/Chicago', hour:'numeric', minute:'2-digit' }); };
+const lastTouch = r => [r.lastAt, r.coverage && r.coverage.at].filter(Boolean).sort().pop() || '';
+const isActive = r => { const t = lastTouch(r); return t && (Date.now() - new Date(t).getTime()) < ACTIVE_MIN * 60000; };
+// Streets driven (31 Oct): phones send street-piece numbers (GPS) and hand-ticked street names; turfmap.js turns them into miles.
+function cov(r){
+  const m = turfMeta[r.route]; if(!m || !m.ps) return null;
+  const c = r.coverage || { p: [], s: [] };
+  const done = window.pieceDone(m.t, m.ps, new Set(c.p), new Set(c.s));
+  let d = 0; m.ps.forEach((p, i) => { if(done(i)) d += p.len; });
+  return { pct: m.total ? Math.round(100 * d / m.total) : 0, mi: d / 1609.344, total: m.total / 1609.344, done };
+}
+// Street names with less than half their length driven, longest first.
+function notDriven(r){
+  const m = turfMeta[r.route], c = cov(r); if(!m || !c || !m.t.names) return [];
+  const sn = window.streetShortName || (x => x), by = {};
+  m.ps.forEach((p, i) => { const n = sn(m.t.names[p.si] || ''); if(!n) return; const b = by[n] || (by[n] = { len: 0, done: 0 }); b.len += p.len; if(c.done(i)) b.done += p.len; });
+  return Object.entries(by).filter(([n, b]) => b.len >= 75 && b.done < b.len / 2).sort((a, b) => b[1].len - a[1].len).map(([n]) => n);
+}
+const real = () => D.routes.filter(r => r.kind !== 'Test');
+const digits = p => String(p || '').replace(/\D/g, '').slice(-10);
+const firstName = n => String(n || '').trim().split(/[\s&,]+/)[0] || '';
+// Section a route sits in: its Group if set (Bob, Jessie), otherwise the town most of its stops are in.
+const section = r => r.kind === 'Test' ? 'Practice' : (r.group || r.town || 'Other');
+const SECTION_ORDER = ['Hastings', 'Cottage Grove', 'Bob', 'Jessie'];
+const secRank = s => { const i = SECTION_ORDER.indexOf(s); return i < 0 ? (s === 'Practice' ? 99 : 50) : i; };
+// One color per state, used on the map and the route cards.
+function stateOf(r){
+  if(r.kind === 'Test') return { key:'test', label:'Practice', color:'#6B6B6B' };
+  const c = cov(r);
+  if(r.status === 'Complete' || (c && c.pct >= 95)) return { key:'done', label:'Complete', color:'#237A4B' };
+  if(!r.volunteer) return { key:'open', label:'Needs a volunteer', color:'#9F2B2B' };
+  if(isActive(r)) return { key:'out', label:'Out now', color:'#2F7FD0' };
+  if(r.lastAt || (c && c.pct > 0)) return { key:'started', label:'Started', color:'#7A5BC4' };
+  if(!r.linkSent) return { key:'unsent', label:'Link not sent', color:'#A4581C' };
+  return { key:'sent', label:'Link sent', color:'#6B6B6B' };
+}
+// People, not routes: Bob and Jessie each get one text with both of their links.
+function people(){
+  const by = new Map();
+  for (const r of real()) {
+    if(!r.volunteer || r.status === 'Archived') continue;
+    const k = r.volunteer.trim().toLowerCase();
+    if(!by.has(k)) by.set(k, { name: r.volunteer.trim(), routes: [] });
+    by.get(k).routes.push(r);
+  }
+  return [...by.values()].map(p => {
+    const ph = p.routes.map(r => r.phone).find(Boolean) || '';
+    const guess = !ph ? p.routes.map(r => r.phoneGuess).find(Boolean) || '' : '';
+    const from = !ph ? (p.routes.find(r => r.phoneGuess) || {}).phoneGuessFrom || '' : '';
+    return { ...p, phone: ph || guess, guessed: !ph && !!guess, guessFrom: from, sent: p.routes.every(r => r.linkSent), sentAt: p.routes.map(r => r.linkSent).filter(Boolean).sort().pop() || '' };
+  }).sort((a, b) => a.sent - b.sent || secRank(section(a.routes[0])) - secRank(section(b.routes[0])) || a.name.localeCompare(b.name));
+}
+function message(p){
+  const me = firstName(D.who.name);
+  const lines = p.routes.map(r => (p.routes.length > 1 ? r.route + ': ' : '') + link(r));
+  return `Hi ${firstName(p.name)}, thanks for helping pick up yard signs on Wednesday, Nov 4! Your route${p.routes.length > 1 ? 's' : ''}:\n` +
+    lines.join('\n') + `\n\nOpen ${p.routes.length > 1 ? 'them' : 'it'} on your phone. It has the map, what to pick up and where to bring the signs. Questions, just text me.\n${me}`;
+}
+function render(){
+  if(view === 'route') { $('#mapbox').style.display = 'none'; $('#stats').innerHTML = ''; return renderRoute(); }
+  if(view === 'vols') { $('#mapbox').style.display = 'none'; $('#stats').innerHTML = ''; return renderVols(); }
+  const t = D.pickup || { stops:0, open:0, done:0, signs:0, signsBack:0, large:0, byCandidate:{} };
+  const R = real(), out = R.filter(isActive).length;
+  const AR = R.filter(r => turfMeta[r.route]), cs = AR.map(cov).filter(Boolean);
+  const drMi = cs.reduce((a, c) => a + c.mi, 0), totMi = cs.reduce((a, c) => a + c.total, 0), doneAreas = cs.filter(c => c.pct >= 95).length;
+  $('#hdr').innerHTML = `<div class="eyebrow">Jen Fox for 41B · ${esc(firstName(D.who.name))}</div><h1>Sign pickup</h1><div class="sub">${today()} · pickup is Wednesday, Nov 4</div>`;
+  // Demo: address-list routes only, so the area-sweep tiles become stop tiles.
+  $('#stats').innerHTML = AR.length ? `<div class="stats"><div class="stat"><b>${out}</b><span>Routes out now</span></div><div class="stat"><b>${totMi ? Math.round(100 * drMi / totMi) + '%' : '…'}</b><span>Streets driven${totMi ? ` · ${drMi.toFixed(0)} of ${totMi.toFixed(0)} mi` : ''}</span></div><div class="stat"><b>${doneAreas}<small> / ${AR.length || '…'}</small></b><span>Areas done</span></div></div>`
+    : `<div class="stats"><div class="stat"><b>${out}</b><span>Routes out now</span></div><div class="stat"><b>${t.done}<small> / ${t.stops}</small></b><span>Stops marked</span></div><div class="stat"><b>${t.signsBack}</b><span>Signs back</span></div></div>`;
+  $('#mapbox').style.display = '';
+  drawOverview();
+  let h = '';
+  // 1. Send links (before Wednesday)
+  const P = people(), sent = P.filter(p => p.sent).length;
+  h += `<div class="card"><p class="lbl">Send links · ${sent} of ${P.length} people sent</p>
+    <p class="small muted" style="margin:-2px 0 8px">One text per person, with every route they have. <b>Copy text</b> to paste into Google Messages on the computer, or <b>Text</b> to open it on your phone. Then tick Sent.</p>` +
+    P.map((p, i) => `<div class="row sendrow ${p.sent ? 'is-sent' : ''}">
+      <div style="min-width:0;flex:1"><div class="who">${esc(p.name)} <span class="small muted">${p.routes.map(r => esc(r.route)).join(', ')}</span></div>
+        <div class="addr">${p.phone ? `${esc(p.phone)}${p.guessed ? ` <span class="pill wait" title="Not on the route. Matched by first name to ${esc(p.guessFrom)}">from ${esc(p.guessFrom)}</span>` : ''}` : '<span class="pill warn">No phone</span> <button class="btn ghost" style="padding:0;font-size:.8rem" onclick="openRoute=D.routes.indexOf(people()[' + i + '].routes[0]);view=\'route\';render();scrollTo(0,0)">add one</button>'}${p.sent ? ' · sent ' + esc(new Date(p.sentAt).toLocaleString('en-US', { timeZone:'America/Chicago', weekday:'short', hour:'numeric', minute:'2-digit' })) : ''}</div></div>
+      <div class="tools" style="flex-wrap:nowrap;align-items:center">
+        <button class="btn soft sm" onclick="copy(message(people()[${i}]),'Text copied for ${esc(firstName(p.name))}')">Copy text</button>
+        ${p.phone ? `<a class="btn soft sm" style="text-decoration:none" href="sms:${digits(p.phone)}?body=${encodeURIComponent(message(p))}">Text</a>` : ''}
+        <label class="small sentbox"><input type="checkbox" ${p.sent ? 'checked' : ''} onchange="post({action:'markSent',routeIds:people()[${i}].routes.map(r=>r.id),sent:this.checked},this.checked?'Marked sent':'Unmarked')"> Sent</label></div></div>`).join('') +
+    (R.some(r => !r.volunteer) ? `<p class="small" style="margin:10px 0 0"><span class="pill warn">${R.filter(r => !r.volunteer).map(r => esc(r.route)).join(', ')} need a volunteer</span></p>` : '') + `</div>`;
+  // 2. Routes, by section
+  h += `<div class="tools"><button class="btn soft sm" onclick="printSheets()">Print all sheets</button><button class="btn soft sm" onclick="copyAllLinks()">Copy all links</button>${groupTextLinks()}<button class="btn ghost sm" onclick="refresh()">Refresh</button></div>`;
+  const secs = [...new Set(D.routes.map(section))].sort((a, b) => secRank(a) - secRank(b) || a.localeCompare(b));
+  for (const s of secs) {
+    const rs = D.routes.map((r, i) => [r, i]).filter(([r]) => section(r) === s);
+    h += `<p class="lbl" style="margin:10px 0 -4px 4px">${esc(s)}</p>` + rs.map(([r, i]) => {
+      const st = stateOf(r), tm = turfMeta[r.route];
+      return `<button class="route" onclick="openRoute=${i};view='route';render();scrollTo(0,0)" style="border-left:5px solid ${st.color}">
+        <div class="top"><span>${esc(r.route)} · ${r.volunteer ? esc(r.volunteer) : '<span style="color:var(--bad)">no volunteer</span>'}</span><span>${(c => c ? c.pct + '% of streets' : tm ? '' : r.closed + ' / ' + r.total + ' stops')(cov(r))}</span></div>
+        ${(c => c ? `<div class="meter"><i style="width:${c.pct}%"></i></div>` : tm ? '' : `<div class="meter"><i style="width:${r.total ? 100 * r.closed / r.total : 0}%"></i></div>`)(cov(r))}
+        <div class="small muted" style="margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(shortArea(r.area))}</div>
+        <div class="meta"><span class="pill" style="background:${st.color}22;color:${st.color}">${st.label}</span>
+          ${tm ? `<span>${(c => c ? c.mi.toFixed(1) + ' of ' : '')(cov(r))}${tm.streetMi} mi driven</span>` : `<span>address list</span>`}
+          <span>${r.large ? r.large + ' large' : 'no large'}</span>
+          ${r.coverage && r.coverage.at ? `<span>streets updated ${esc(ago(r.coverage.at))}</span>` : ''}
+          ${r.lastAt ? `<span>last stop marked ${esc(ago(r.lastAt))}${r.lastBy ? ' by ' + esc(firstName(r.lastBy)) : ''}</span>` : ''}</div></button>`;
+    }).join('');
+  }
+  // 3. Notes from volunteers
+  if((D.pickupNotes || []).length){
+    h += `<div class="card"><p class="lbl">Notes from pickup volunteers</p>` + D.pickupNotes.map(n => `<div class="row" style="display:block">
+      <div class="who">${esc(n.address)} ${n.route ? `<span class="pill new">${esc(n.route)}</span>` : ''} <span class="pill ${n.status==='Picked up'?'good':n.status==='To pick up'?'wait':'warn'}">${esc(n.status)}</span></div>
+      <div class="small" style="margin-top:4px">${esc(n.note)}${n.by ? ' <span class="muted">· ' + esc(n.by) + '</span>' : ''}</div></div>`).join('') + `</div>`;
+  }
+  // 4. Wrap-up
+  h += wrapUp(t);
+  // 4b. Every campaign's signs
+  h += countsCard();
+  // 5. Find a sign
+  h += `<div class="card"><p class="lbl">Find a sign</p><input id="q" type="search" autocomplete="off" placeholder="Name, address, phone or S-number" value="${esc(q)}"><p class="small muted" style="margin:6px 0 0">Jen’s households, with their pickup status and route.</p><div id="results" style="margin-top:8px"></div></div>`;
+  // 6. Signups
+  h += signupsCard();
+  h += `<p class="small muted center" style="margin-top:12px">${D.volunteers && !D.volunteers.error ? `<button class="btn ghost" onclick="view='vols';render();scrollTo(0,0)">Volunteer records</button> · ` : ''}<button class="btn ghost" onclick="fetch('/api/auth',{method:'DELETE'}).then(()=>location.reload())">Sign out</button></p>`;
+  $('#app').innerHTML = h;
+  $('#q').addEventListener('input', e => { q = e.target.value; renderSearch(); });
+  renderSearch();
+}
+// Every campaign's signs: how many are out in 41B. Jen and the school board are live from the pickup list;
+// everyone else is an estimate (edit the number when a campaign reports one).
+function countsCard(){
+  const C = D.counts || [];
+  if(!C.length) return '';
+  const fmt = v => v === null || v === undefined ? '' : String(v);
+  const sum = (xs, f) => xs.reduce((n, c) => n + (f(c) || 0), 0);
+  const total = sum(C, c => c.placed), est = sum(C.filter(c => c.source !== 'From app list'), c => c.placed);
+  const input = c => `<input inputmode="numeric" style="width:4.2em;padding:4px 6px" value="${fmt(c.placed)}" onchange="saveCount(${C.indexOf(c)},'placed',this.value)">`;
+  const how = c => c.source === 'From app list' ? 'pickup list' : c.source === 'Reported by campaign' ? 'reported' : 'estimate';
+  return `<div class="card"><p class="lbl">Signs out in 41B</p>
+    <p class="small muted" style="margin:-2px 0 8px">Jen and the school board come from the pickup list. The rest are estimates; type a new number when a campaign reports one.</p>
+    <div class="stats" style="margin-bottom:8px"><div class="stat"><b>${total}</b><span>Signs out${est ? ` · ${est} estimated` : ''}</span></div></div>
+    <div style="overflow-x:auto"><table class="wtab"><tr><th>Campaign</th><th>Signs</th></tr>` +
+    C.map(c => `<tr><td><div>${esc(c.name)}</div><div class="small muted">${how(c)}</div></td><td>${c.source === 'From app list' ? fmt(c.placed) : input(c)}</td></tr>`).join('') +
+    `</table></div></div>`;
+}
+function saveCount(i, k, v){
+  const c = (D.counts || [])[i]; if(!c) return;
+  post({ action:'setCount', countId:c.id, [k]: k === 'source' ? v : String(v).trim() }, 'Saved ' + c.name);
+}
+// "Hastings north: north of Hwy 55 ... (includes 7 large signs)" -> without the large-sign tail
+const shortArea = a => String(a || '').replace(/\s*\((includes|no) [^)]*\)\s*$/, '');
+function wrapUp(t){
+  const A = real().filter(r => turfMeta[r.route]), Ls = real().filter(r => !turfMeta[r.route]);
+  const started = A.some(r => { const c = cov(r); return c && c.pct > 0; }) || t.done;
+  let h = `<div class="card"><p class="lbl">Wrap-up</p>`;
+  if(!started) return h + `<p class="small muted" style="margin:0">Fills in on Wednesday: streets not driven yet in each area, and stops not marked on the address lists, ready to copy as a cleanup list.</p></div>`;
+  if(A.length) h += `<table class="wtab"><tr><th>Area</th><th>Driven</th><th>Not driven yet</th></tr>` + A.map(r => { const c = cov(r), nd = notDriven(r);
+    return `<tr><td>${esc(r.route)} ${esc(firstName(r.volunteer))}</td><td>${c ? c.pct + '%' : ''}</td><td class="small">${nd.length ? esc(nd.slice(0, 6).join(', ')) + (nd.length > 6 ? ` +${nd.length - 6} more` : '') : 'all done'}</td></tr>`; }).join('') + `</table>`;
+  const left = Ls.reduce((n, r) => n + r.stops.filter(s => s.status === 'To pick up').length, 0);
+  h += `<p class="small muted" style="margin:8px 0">Address lists: ${left} stops not marked yet.</p>`;
+  return h + `<div class="tools"><button class="btn soft sm" onclick="copyLeftovers()">Copy cleanup list</button></div></div>`;
+}
+function copyLeftovers(){
+  const out = [];
+  for (const r of real()) {
+    if(turfMeta[r.route]){ const nd = notDriven(r); if(nd.length) out.push(`${r.route} (${r.volunteer || 'no volunteer'}), streets not driven: ${nd.length}\n` + nd.map(n => '  ' + n).join('\n')); }
+    else { const s = r.stops.filter(x => x.status === 'To pick up'); if(s.length) out.push(`${r.route} (${r.volunteer || 'no volunteer'}), stops not marked: ${s.length}\n` + s.map(x => '  ' + x.address + ' · ' + x.grab).join('\n')); }
+  }
+  copy(out.join('\n\n') || 'Everything is done.', 'Cleanup list copied');
+}
+function signupsCard(){
+  const SU = D.signups || [];
+  const onRoute = u => real().filter(r => r.volunteer && firstName(r.volunteer).toLowerCase() === firstName(u.name).toLowerCase()).map(r => r.route);
+  const areas = [...new Set(SU.map(u => u.route || 'Anywhere'))];
+  let h = `<div class="card"><p class="lbl">Volunteer signups (${SU.length})</p><p class="small muted" style="margin:0 0 8px">From <a href="/signs/volunteer.html" target="_blank">/volunteer</a>, grouped by the area they picked. "On" shows the route a person with that first name already has; put anyone else on a route from that route’s page.</p>`;
+  if(!SU.length) return h + `<p class="small muted" style="margin:0">None yet.</p></div>`;
+  for (const a of areas) {
+    h += `<p class="small" style="margin:8px 0 2px;font-weight:600">${esc(a)}</p>` + SU.filter(u => (u.route || 'Anywhere') === a).map(u => { const on = onRoute(u); return `<div class="row" style="display:block">
+      <div class="who">${esc(u.name)} ${on.length ? `<span class="pill good">On ${on.map(esc).join(', ')}</span>` : '<span class="pill warn">Not on a route</span>'} ${u.large==='Yes' ? '<span class="pill wait">Room for large</span>' : '<span class="pill wait">No large</span>'}</div>
+      <div class="small">${esc(u.phone)} <span class="muted">· signed up ${new Date(u.created).toLocaleString('en-US',{timeZone:'America/Chicago',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span></div>
+      ${u.notes ? `<div class="small" style="margin-top:4px">${esc(u.notes)}</div>` : ''}</div>`; }).join('');
+  }
+  return h + `</div>`;
+}
+// ---- Overview map: every area shaded by state, list-route stops as dots. Built once, restyled on refresh. ----
+let omap = null, olayers = {}, turfMeta = {};
+async function drawOverview(){
+  if(!window.L){ setTimeout(drawOverview, 200); return; }
+  const box = $('#omap'); if(!box) return;
+  if(!omap){
+    omap = L.map(box, { zoomControl: true, scrollWheelZoom: false });
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { minZoom: 9, maxZoom: 17, attribution: '© OpenStreetMap contributors' }).addTo(omap);
+    omap.setView([44.78, -92.9], 11);
+  }
+  const R = real(); const bounds = [];
+  await Promise.all(R.map(async r => {
+    const st = stateOf(r), idx = D.routes.indexOf(r);
+    if(!olayers[r.route]){
+      const t = await loadTurf(r.route);
+      const g = L.featureGroup().addTo(omap);
+      if(t){
+        const ps = window.turfPieces(t);
+        turfMeta[r.route] = { streetMi: t.streetMi, t, ps, total: ps.reduce((a, p) => a + p.len, 0) };
+        t.polyD.forEach(p => L.polygon(p, { weight: 2, fillOpacity: .28 }).addTo(g));
+      } else {
+        r.stops.filter(s => s.lat != null).forEach(s => L.circleMarker([s.lat, s.lng], { radius: 4, weight: 1, fillOpacity: .85 }).addTo(g));
+      }
+      olayers[r.route] = g;
+      g.bindTooltip('', { sticky: true });
+    }
+    const g = olayers[r.route];
+    g.eachLayer(l => l !== g._driven && l.setStyle && l.setStyle({ color: st.color, fillColor: st.color }));
+    // driven streets in green on top of the area
+    if(g._driven){ g.removeLayer(g._driven); g._driven = null; }
+    const c = cov(r);
+    if(c && c.pct > 0){ const m = turfMeta[r.route]; g._driven = L.polyline(m.ps.filter((p, i) => c.done(i)).map(p => p.c), { color: '#1E9E4F', weight: 3, opacity: .95, interactive: false }).addTo(g); }
+    g.setTooltipContent(`<b>${esc(r.route)}</b> · ${esc(r.volunteer || 'no volunteer')}<br>${esc(st.label)} · ${c ? c.pct + '% of streets driven' : r.closed + '/' + r.total + ' stops marked'}${lastTouch(r) ? '<br>last update ' + esc(ago(lastTouch(r))) : ''}`);
+    g.off('click').on('click', () => { openRoute = D.routes.findIndex(x => x.id === r.id); view = 'route'; render(); scrollTo(0, 0); });
+    try { const b = g.getBounds(); if(b.isValid()) bounds.push(b); } catch {}
+  }));
+  // area labels
+  if(!omap._labels){ omap._labels = L.layerGroup().addTo(omap); }
+  omap._labels.clearLayers();
+  for (const r of R) { const g = olayers[r.route]; if(!g || !turfMeta[r.route]) continue; const c = g.getBounds().getCenter();
+    L.marker(c, { interactive: false, icon: L.divIcon({ className: 'olabel', html: `${esc(r.route)}<br><span>${esc(firstName(r.volunteer) || '?')}</span>` }) }).addTo(omap._labels); }
+  if(!omap._fitted && bounds.length){ omap.fitBounds(bounds.reduce((a, b) => a.extend(b), L.latLngBounds(bounds[0].getSouthWest(), bounds[0].getNorthEast())), { padding: [10, 10] }); omap._fitted = true; }
+  $('#olegend').innerHTML = ['open','unsent','sent','out','started','done'].map(k => { const s = stateOf({ status: k==='done'?'Complete':'', volunteer: k==='open'?'':'x', lastAt: k==='out'?new Date().toISOString():k==='started'?'2000-01-01':'', linkSent: k==='unsent'?'':'x' }); return `<span><i style="background:${s.color}"></i>${s.label}</span>`; }).join('') + '<span><i style="background:#1E9E4F;height:3px;vertical-align:3px"></i>streets driven</span><span><i style="background:#999;border-radius:50%"></i>dots = address-list routes</span>';
+  // turf miles arrive after the first paint; repaint the cards once so they show
+  if(!drawOverview._repainted && Object.keys(turfMeta).length){ drawOverview._repainted = true; if(view === 'home') render(); }
+}
+// Refresh every 90 seconds on the home view, unless someone is typing.
+setInterval(() => { if(view === 'home' && D && !busy && document.visibilityState === 'visible' && !['INPUT','SELECT','TEXTAREA'].includes((document.activeElement || {}).tagName)) refresh().catch(()=>{}); }, 90000);
+
+// One sheet per route, map and checklist, built in the page by /sheet.js. Pass an index for a single route.
+function printSheets(i){
+  const rs = (i === undefined ? D.routes.filter(r => r.kind !== 'Test') : [D.routes[i]]).filter(r => r && r.stops.length);
+  if(!rs.length){ toast('Nothing to print: no stops on ' + (i === undefined ? 'any route' : 'this route') + '.'); return; }
+  openSheets(rs, i === undefined ? 'all pickup routes' : '');
+}
+// Group text to every pickup driver with a phone on their route (1 Nov 2026). Opens the phone's messaging app with all
+// numbers filled in; the organizer pastes the message and picture. Two formats because Android messaging apps differ:
+// Google Messages takes commas, Samsung Messages takes semicolons.
+function groupTextLinks(){
+  const mine = '6515550100';
+  const nums = [...new Set(D.routes.filter(r => r.kind !== 'Test').map(r => String(r.phone || '').replace(/\D/g, '').slice(-10)).filter(n => n.length === 10 && n !== mine))];
+  if(!nums.length) return '';
+  return `<a class="btn soft sm" href="sms:${nums.join(',')}">Group text drivers (${nums.length})</a><a class="btn ghost sm" href="sms:${nums.join(';')}">Group text (Samsung)</a>`;
+}
+// Every route and its link, one per line, ready to paste into a text thread or a sheet.
+function copyAllLinks(){
+  const rs = D.routes.filter(r => r.kind !== 'Test' && r.status !== 'Complete');
+  if(!rs.length){ toast('No open routes yet.'); return; }
+  copy(rs.map(r => `${r.route} · ${r.volunteer || 'no volunteer'}: ${link(r)}`).join('\n'), rs.length + ' links copied');
+}
+const PSTAT = ['To pick up', 'Picked up', 'No sign there', 'Keeping it'];
+const PCLS = { 'To pick up': 'open', 'Picked up': 'picked', 'No sign there': 'nosign', 'Keeping it': 'keeping' };
+function renderRoute(){
+  const r = D.routes[openRoute];
+  if(!r){ view = 'home'; return render(); }
+  const st = stateOf(r), pp = people().find(p => p.routes.some(x => x.id === r.id));
+  $('#hdr').innerHTML = `<button class="back" onclick="view='home';render();scrollTo(0,0)">‹ All routes</button><h1>${esc(r.route)} · ${esc(r.volunteer || 'no volunteer')}</h1><div class="sub">${esc(shortArea(r.area))}</div>`;
+  $('#app').innerHTML = `
+    <div class="card"><p class="lbl">Status</p><div class="meta" style="display:flex;gap:8px;flex-wrap:wrap;font-size:.85rem"><span class="pill" style="background:${st.color}22;color:${st.color}">${st.label}</span>
+      ${(c => c ? `<span>${c.pct}% of streets driven (${c.mi.toFixed(1)} of ${c.total.toFixed(1)} mi)</span>` : `<span>${r.closed} of ${r.total} stops marked</span>`)(cov(r))}${r.coverage && r.coverage.at ? `<span>streets updated ${esc(ago(r.coverage.at))}</span>` : ''}<span>${r.large ? r.large + ' large' : 'no large signs'}</span>${r.lastAt ? `<span>last mark ${esc(ago(r.lastAt))}${r.lastBy ? ' by ' + esc(r.lastBy) : ''}</span>` : ''}</div>
+      <div id="rmapwrap" style="margin-top:10px"><div id="rmap"></div></div>
+      ${(nd => nd.length && cov(r) && cov(r).pct > 0 ? `<p class="small" style="margin:6px 0 0"><b>Not driven yet:</b> ${esc(nd.join(', '))}</p>` : '')(notDriven(r))}
+      ${r.coverage && (r.coverage.p.length || r.coverage.s.length) ? `<div class="tools" style="margin-top:8px"><button class="btn ghost sm" onclick="if(confirm('Clear every street marked driven on ${esc(r.route)}? Phones that still have them will send them again.'))post({action:'clearCoverage',routeId:'${r.id}'},'Cleared')">Clear streets driven</button></div>` : ''}</div>
+    <div class="card"><p class="lbl">Volunteer link</p><div class="mono">${esc(link(r))}</div>
+      <p class="small muted" style="margin:6px 0 10px">Opens only this route. No sign-in. Shows addresses and what to grab, never names or phone numbers.${pp && pp.routes.length > 1 ? ' The text below includes ' + esc(firstName(pp.name)) + '’s other route too.' : ''}</p>
+      <div class="tools" style="align-items:center"><button class="btn soft sm" onclick="copy(link(D.routes[openRoute]),'Link copied.')">Copy link</button>
+      ${pp ? `<button class="btn soft sm" onclick="copy(message(people().find(p => p.routes.some(x => x.id === '${r.id}'))),'Text copied')">Copy text</button>
+        ${pp.phone ? `<a class="btn soft sm" style="text-decoration:none" href="sms:${digits(pp.phone)}?body=${encodeURIComponent(message(pp))}">Text ${esc(firstName(pp.name))}</a>` : ''}
+        <label class="small sentbox"><input type="checkbox" ${pp.sent ? 'checked' : ''} onchange="post({action:'markSent',routeIds:people().find(p => p.routes.some(x => x.id === '${r.id}')).routes.map(x=>x.id),sent:this.checked},this.checked?'Marked sent':'Unmarked')"> Sent</label>` : ''}
+      <button class="btn no sm" onclick="if(confirm('The old link will stop working. Continue?'))post({action:'newLink',routeId:'${r.id}'},'New link made. The old one is dead.')">New link</button></div></div>
+    <div class="card"><p class="lbl">Who has it</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="vn" placeholder="Volunteer name" value="${esc(r.volunteer)}"><input id="vp" placeholder="${r.phoneGuess ? esc(r.phoneGuess) + ' (from ' + esc(r.phoneGuessFrom) + ')' : 'Their phone'}" value="${esc(r.phone)}"></div>
+      <div class="tools" style="margin-top:8px"><button class="btn soft sm" onclick="post({action:'setVolunteer',routeId:'${r.id}',volunteer:$('#vn').value,phone:$('#vp').value},'Saved')">Save</button><button class="btn soft sm" onclick="printSheets(openRoute)">Print this sheet</button><button class="btn ghost sm" onclick="if(confirm('Archive this route? The link stops working.'))post({action:'archiveRoute',routeId:'${r.id}'},'Archived').then(()=>{view='home';render()})">Archive route</button></div></div>
+    <div class="card"><p class="lbl">Stops, in driving order</p><p class="small muted" style="margin:-4px 0 10px">"Heads up" shows on the volunteer’s phone at that stop. "Volunteer wrote" is what they typed back.</p>` + r.stops.map((s,i) => `
+      <div class="stop ${PCLS[s.status] || 'open'}" style="cursor:default;align-items:flex-start">
+        <div class="n">${s.status==='Picked up'?'✓':s.status==='No sign there'?'–':s.status==='Keeping it'?'K':i+1}</div>
+        <div style="flex:1;min-width:0"><div class="who">${esc(s.address)}${s.found ? ' <span class="pill wait">found</span>' : ''}</div><div class="a">${esc(s.grab)}${s.by && s.status !== 'To pick up' ? ' · ' + esc(s.status.toLowerCase()) + ' by ' + esc(s.by) : ''}</div>
+          ${editNote === s.id
+            ? `<div class="noterow" style="margin-top:6px"><input id="en_${s.id}" maxlength="500" placeholder="e.g. large sign, back yard" value="${esc(s.notes)}"><button class="btn soft sm" onclick="post({action:'setPickupNote',pickupId:'${s.id}',notes:$('#en_${s.id}').value},'Saved. The volunteer sees it at that stop.').then(ok=>{if(ok){editNote=null;render()}})">Save</button><button class="btn ghost sm" onclick="editNote=null;render()">Cancel</button></div>`
+            : `<div class="a">${s.notes ? '<b>Heads up:</b> ' + esc(s.notes) + ' ' : ''}<button class="btn ghost" style="padding:0;font-size:.8rem" onclick="editNote='${s.id}';render();try{$('#en_${s.id}').focus()}catch{}">${s.notes ? 'edit' : '+ note for the volunteer'}</button></div>`}
+          ${s.driverNote ? `<div class="a" style="color:var(--ink)"><b>Volunteer wrote:</b> ${esc(s.driverNote)}</div>` : ''}</div>
+        <select aria-label="Pickup status" onchange="post({action:'setPickupStatus',pickupId:'${s.id}',status:this.value},'Updated')" style="width:auto;padding:6px 8px;font-size:.8rem">${PSTAT.map(o => `<option ${o===s.status?'selected':''}>${o}</option>`).join('')}</select>
+      </div>`).join('') + `</div>`;
+  drawRouteMap(r);
+}
+// Route page map: the area (or nothing, for list routes) and every stop colored by status.
+async function drawRouteMap(r){
+  if(!window.L){ setTimeout(() => drawRouteMap(r), 200); return; }
+  const el = $('#rmap'); if(!el) return;
+  const m = L.map(el, { scrollWheelZoom: false });
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { minZoom: 9, maxZoom: 17, attribution: '© OpenStreetMap contributors' }).addTo(m);
+  const g = L.featureGroup().addTo(m);
+  const t = await loadTurf(r.route);
+  if(t){ t.polyD.forEach(p => L.polygon(p, { color:'#2F7FD0', weight:2, fillOpacity:.08 }).addTo(g));
+    const ps = window.turfPieces(t), c = r.coverage || { p: [], s: [] }, done = window.pieceDone(t, ps, new Set(c.p), new Set(c.s));
+    ps.forEach((p, i) => L.polyline(p.c, done(i) ? { color:'#1E9E4F', weight:4, opacity:.95 } : { color:'#E58A2B', weight:2, opacity:.6 }).addTo(g)); }
+  const C = { 'To pick up':'#6B6B6B', 'Picked up':'#237A4B', 'No sign there':'#A4581C', 'Keeping it':'#7A5BC4' };
+  r.stops.filter(s => s.lat != null).forEach((s, i) => L.circleMarker([s.lat, s.lng], { radius: s.large ? 7 : 5, color: '#fff', weight: 1.5, fillColor: C[s.status] || '#6B6B6B', fillOpacity: 1 })
+    .bindTooltip(`${esc(s.address)}<br>${esc(s.grab)}<br><b>${esc(s.status)}</b>`).addTo(g));
+  try { m.fitBounds(g.getBounds(), { padding: [10, 10] }); } catch { m.setView([44.75, -92.87], 12); }
+}
+function renderAdd(){
+  $('#hdr').innerHTML = `<button class="back" onclick="view='home';render()">‹ Back</button><h1>Add a signup</h1><div class="sub">For requests that came by phone, text, or Facebook</div>`;
+  $('#app').innerHTML = `<div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>First name</label><input id="af"></div><div><label>Last name</label><input id="al"></div></div>
+    <div style="display:grid;grid-template-columns:100px 1fr;gap:8px"><div><label>House #</label><input id="ah" inputmode="numeric"></div><div><label>Street</label><input id="as" placeholder="e.g. Ramsey St"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Apt / unit</label><input id="au" placeholder="e.g. 4B"></div><div><label>City</label><select id="ac"><option>Hastings</option><option>Cottage Grove</option><option>Denmark Twp</option><option>Other</option></select></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Phone</label><input id="ap" inputmode="tel"></div><div><label>Sign size</label><select id="az"><option>S</option><option>L</option></select></div></div>
+    <label>Email</label><input id="ae" inputmode="email">
+    <label>Notes for the volunteer</label><input id="an" placeholder="e.g. by the mailbox, gate on the side">
+    <div class="acts" style="grid-template-columns:1fr"><button class="btn" onclick="post({action:'addSign',first:$('#af').value,last:$('#al').value,house:$('#ah').value,street:$('#as').value,unit:$('#au').value,city:$('#ac').value,phone:$('#ap').value,email:$('#ae').value,size:$('#az').value,notes:$('#an').value},'Added and routed').then(ok=>{if(ok){view='home';render()}})">Add and route it</button></div>
+  </div>`;
+}
+const r_ = () => D.routes[openRoute];
+// Volunteers: who delivered what, with contact info. Stats come from /api/org (api/_lib/volunteers.js).
+const sizeText = z => Object.entries(z).sort((a,b) => b[1]-a[1]).map(([k,n]) => `${n} ${k==='?' ? 'no size' : k}`).join(', ');
+const shortDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '';
+function volStats(v){
+  return `<div class="stats" style="margin-top:8px"><div class="stat"><b>${v.signs ?? v.delivered}</b><span>Signs</span></div><div class="stat"><b>${v.routes}</b><span>Routes</span></div><div class="stat"><b>${v.miles ? '~' + Math.round(v.miles) : 0}</b><span>Est. miles</span></div></div>
+    <div class="addr" style="margin-top:6px">${[v.declined ? v.declined + ' declined' : '', v.days ? v.days + ' day' + (v.days===1?'':'s') + ' out' : '', v.lastOut ? 'last ' + shortDate(v.lastOut) : '', sizeText(v.sizes), v.routeNames.length ? 'on ' + v.routeNames.join(', ') : ''].filter(Boolean).map(esc).join(' · ')}</div>`;
+}
+function renderVols(){
+  const VS = D.volunteers || {};
+  $('#hdr').innerHTML = `<button class="back" onclick="view='home';editVol=null;render();scrollTo(0,0)">‹ Back</button><h1>Volunteers</h1><div class="sub">Who delivered what, and how to reach them</div>`;
+  if(VS.error){ $('#app').innerHTML = `<div class="err">Could not work out volunteer numbers: ${esc(VS.error)}</div>`; return; }
+  const vols = VS.volunteers || [], un = VS.unlinked || [];
+  const opts = vols.map(v => `<option value="${esc(v.id)}">${esc(v.name)}</option>`).join('');
+  let h = '';
+  if(un.length){
+    h += `<div class="card" style="border-color:var(--warn)"><p class="lbl" style="color:var(--warn)">Names to match</p><p class="small muted" style="margin:-4px 0 6px">Typed on a route page before the app asked for phone numbers. Match each one to a person, or add them as a new volunteer.</p>` + un.map((v,i) => `
+      <div class="row" style="display:block"><div class="who">${esc(v.name)}</div>${volStats(v)}
+        ${vols.length ? `<div class="tools" style="margin-top:8px;align-items:center"><select id="lk_${i}" aria-label="Same person as" style="width:auto;flex:1;min-width:0;padding:8px"><option value="">Same person as…</option>${opts}</select><button class="btn soft sm" onclick="if(!$('#lk_${i}').value){toast('Pick who it is first');return}post({action:'linkName',volunteerId:$('#lk_${i}').value,name:${esc(JSON.stringify(v.name))}},'Matched')">Match</button></div>` : ''}
+        <div class="tools" style="margin-top:8px"><input id="nn_${i}" placeholder="Full name" value="${esc(v.name)}" style="flex:1;min-width:0"><input id="np_${i}" inputmode="tel" placeholder="Phone" style="flex:1;min-width:0"><button class="btn soft sm" onclick="post({action:'saveVolunteer',name:$('#nn_${i}').value,phone:$('#np_${i}').value,alias:${esc(JSON.stringify(v.name))}},'Added')">New volunteer</button></div>
+      </div>`).join('') + `</div>`;
+  }
+  h += `<div class="card"><p class="lbl">Volunteers</p>` + (vols.length ? vols.map(v => `
+    <div class="row" style="display:block">
+      ${editVol === v.id
+        ? `<div class="tools"><input id="en" value="${esc(v.name)}" placeholder="Full name" style="flex:1;min-width:0"><input id="ep" value="${esc(v.phone)}" inputmode="tel" placeholder="Phone" style="flex:1;min-width:0"></div>
+           <div class="tools" style="margin-top:8px"><button class="btn soft sm" onclick="post({action:'saveVolunteer',id:'${v.id}',name:$('#en').value,phone:$('#ep').value},'Saved').then(ok=>{if(ok){editVol=null;render()}})">Save</button><button class="btn ghost sm" onclick="editVol=null;render()">Cancel</button></div>`
+        : `<div class="who">${esc(v.name)} <button class="btn ghost" style="padding:0;font-size:.8rem" onclick="editVol='${v.id}';render()">edit</button></div>
+           <div class="addr">${v.phone ? `<a href="tel:${esc(v.phone)}">${esc(v.phone)}</a>` : 'No phone yet'}</div>`}
+      ${volStats(v)}
+      ${v.aliases.length ? `<div class="small muted" style="margin-top:4px">Also counts: ${v.aliases.map(a => `${esc(a)} <button class="btn ghost" style="padding:0 4px;font-size:.8rem" aria-label="Stop counting ${esc(a)}" onclick="post({action:'unlinkName',volunteerId:'${v.id}',name:${esc(JSON.stringify(a))}},'Unmatched')">×</button>`).join(' ')}</div>` : ''}
+    </div>`).join('') : '<div class="addr">Nobody yet. Volunteers are added the first time they open a route link and enter their name and phone.</div>') + `</div>`;
+  h += `<div class="card"><p class="lbl">Add a volunteer</p><div class="tools"><input id="an2" placeholder="Full name" style="flex:1;min-width:0"><input id="ap2" inputmode="tel" placeholder="Phone" style="flex:1;min-width:0"><button class="btn soft sm" onclick="post({action:'saveVolunteer',name:$('#an2').value,phone:$('#ap2').value},'Added')">Add</button></div></div>`;
+  h += `<p class="small muted" style="margin:0 4px">Miles are an estimate: straight-line distance between each person's stops on a day, times ${VS.roadFactor || 1.3} for roads. They leave out the drive to the first stop and home. Before Sep 11 the app did not record which route a stop was on, so each day out before then counts as one route.${VS.unnamedDelivered ? ` ${VS.unnamedDelivered} delivered signs have no name on them (old sheet or set by an organizer), so they are not counted here.` : ''}</p>`;
+  $('#app').innerHTML = h;
+}
+boot().catch(e => { $('#app').innerHTML = '<div class="err">Could not load. Check your connection and reload.</div>'; console.error(e); });
+</script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/signs/demo-api.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Your sign pickup route</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap">
+<link rel="stylesheet" href="/signs/app.css">
+<style>body.sh-open #turfwrap{visibility:hidden}
+#howwrap,#turfwrap{padding-bottom:0}
+.wrap:empty{display:none}
+.lrow{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line)}
+.lrow:first-of-type{border-top:0}
+.lrow .stop{border-top:0;flex:1}
+.strs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.str{display:flex;gap:8px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line);background:var(--card);font:inherit;font-size:.9rem;color:var(--ink);border-radius:8px;cursor:pointer}
+.str b{flex:none;min-width:22px;height:18px;line-height:18px;border:1.5px solid #1f4e9c;border-radius:9px;color:#1f4e9c;font-size:.72rem;text-align:center}
+@media (prefers-color-scheme: dark){ .str b{border-color:#8fb3f0;color:#8fb3f0} }
+.str.on{background:var(--good-soft);color:var(--muted);text-decoration:line-through}
+.str.on b{background:#2e9e57;border-color:#2e9e57;color:#fff}
+.go{flex:none;padding:8px 12px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.85rem;text-decoration:none}</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script src="/signs/turfmap.js" defer></script>
+<script src="/signs/drive.js" defer></script>
+<script src="/signs/pull.js"></script>
+<script src="/signs/sheet.js" defer></script>
+</head>
+<body>
+<div class="demo-strip">Portfolio demo of the yard sign app. Every household, address and name here is made up, and nothing you tap is saved beyond this browser tab. <a href="/signs/">All screens</a> · <a href="/">Team site</a></div>
+<div class="bar"><div class="in"><div class="eyebrow">Yard sign pickup · Wednesday, Nov 4</div><h1 id="title">Loading your route…</h1><div class="sub" id="sub"></div></div></div>
+<div class="wrap" id="howwrap"></div>
+<div class="wrap" id="turfwrap"></div>
+<div class="wrap" id="app"><div class="card muted">One moment.</div></div>
+<div class="toast" id="toast"></div>
+<script>
+// Pickup edition, Nov 4 2026. Stops show an address and what to grab, never a name or a phone number.
+const token = location.pathname.split('/').pop();
+let data = null, lastAction = null, skipTo = null, foundOpen = false, turfApi = null, turfData = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2000)}
+function myVol(){ try { const v = JSON.parse(localStorage.getItem('jfs_vol') || 'null'); return v && v.id && v.name ? v : null; } catch { return null; } }
+function myName(){ const v = myVol(); return v ? v.name : ''; }
+function setVol(v){ try { if(v){ localStorage.setItem('jfs_vol', JSON.stringify(v)); localStorage.setItem('jfs_name', v.name); } else localStorage.removeItem('jfs_vol'); } catch {} }
+function oldFirstName(){ try { return (localStorage.getItem('jfs_name') || '').trim().split(/\s+/)[0] || ''; } catch { return ''; } }
+const OPEN = 'To pick up';
+const CLS = { 'To pick up': 'open', 'Picked up': 'picked', 'No sign there': 'nosign', 'Keeping it': 'keeping' };
+const MARK = { 'Picked up': '✓', 'No sign there': '–', 'Keeping it': 'K' };
+const SAID = { picked: 'Picked up', nosign: 'Marked no sign there', keeping: 'Marked keeping it', note: 'Note saved', undo: 'Undone', found: 'Found sign logged' };
+
+async function load(){
+  const r = await fetch('/api/route?token=' + encodeURIComponent(token));
+  let j = null; try { j = await r.json(); } catch { j = null; }
+  if(!r.ok){ $('#title').textContent = 'This link is not active'; $('#app').innerHTML = `<div class="card">${esc((j && j.error) || '')}</div>`; return; }
+  data = j; render();
+  // The area map sits above the stop list. It is a help, not a requirement, so any failure leaves the page as it was.
+  try {
+    if (document.readyState === 'loading') await new Promise(r => document.addEventListener('DOMContentLoaded', r, { once: true }));
+    const t = window.loadTurf ? await window.loadTurf(data.route) : null;
+    if (t) {
+      turfData = t;
+      // Streets other phones ticked by hand count here too (31 Oct). Server keeps names; this phone keeps numbers.
+      const order = window.streetOrder ? window.streetOrder(t) : [];
+      const fromServer = new Set((data.coverage && data.coverage.s) || []);
+      if (fromServer.size) { const mine = ticks(); order.forEach(o => { if (fromServer.has(o.name)) mine.add(o.n); }); saveTicks(mine); }
+      turfApi = window.mountTurf($('#turfwrap'), t, data.route, token, () => data && data.stops, { server: data.coverage, getTicks: tickedNames });
+      render();
+    }
+  } catch (e) { console.error('turf', e); }
+}
+async function send(body){
+  const r = await fetch('/api/route', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token, vid: (myVol() || {}).id, ...body }) });
+  let j = null; try { j = await r.json(); } catch { j = null; }
+  return { ok: r.ok, j };
+}
+async function act(stopId, action){
+  if(action !== 'undo' && !myVol()){ toast('Enter your name and phone first'); render(); return; }
+  const btns = [...document.querySelectorAll('#app .btn')]; btns.forEach(b => b.disabled = true);
+  const box = $('#dn');
+  const note = (box && action !== 'undo') ? box.value.trim() : undefined;
+  if(action === 'note' && !note && !(data.stops.find(s => s.id === stopId) || {}).driverNote){ toast('Type a note first'); btns.forEach(b => b.disabled = false); return; }
+  try {
+    const { ok, j } = await send({ stopId, action, ...(note !== undefined ? { note } : {}) });
+    if(!ok){ toast((j && j.error) || 'Could not save. Try again.'); return; }
+    data = { ...j, expectExtra: j.expectExtra ?? data?.expectExtra }; if(action !== 'note'){ lastAction = action === 'undo' ? null : { stopId, action }; skipTo = null; }
+    toast(SAID[action] + (note && action !== 'note' ? ', note saved' : ''));
+    render(); if(action !== 'note') window.scrollTo(0, 0);
+  } catch(e) {
+    console.error('act', e); toast('No signal. Nothing was saved, tap it again.');
+  } finally { btns.forEach(b => { if(document.body.contains(b)) b.disabled = false; }); }
+}
+async function logFound(){
+  const where = $('#fw').value.trim();
+  const counts = {}; ['jen','zuzek','kinneman','larson','other'].forEach(k => { counts[k] = parseInt($('#fc_' + k).value, 10) || 0; });
+  if(!where){ toast('Type the street or address'); $('#fw').focus(); return; }
+  if(!Object.values(counts).some(Boolean)){ toast('Set how many signs, and whose'); return; }
+  const btn = $('#fgo'); btn.disabled = true;
+  try {
+    const { ok, j } = await send({ action: 'found', where, ...counts, note: $('#fn').value.trim() });
+    if(!ok){ toast((j && j.error) || 'Could not save. Try again.'); return; }
+    data = { ...j, expectExtra: j.expectExtra ?? data?.expectExtra }; foundOpen = false; toast(SAID.found); render();
+  } catch(e) { console.error('found', e); toast('No signal. Nothing was saved, tap it again.'); }
+  finally { if(document.body.contains(btn)) btn.disabled = false; }
+}
+function mapsLink(s){
+  const a = (s.mapsAddress || s.address || '').replace(/,?\s*$/, '');
+  return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(a + ', MN');
+}
+function chips(s){
+  return s.items.map(i => `<span class="chip">${i.free ? esc(i.label) : `<b>${i.count}</b> ${esc(i.label)}`}${i.large ? ` <i>${i.large === i.count ? (i.count > 1 ? 'all large' : 'large') : i.large + ' large'}</i>` : ''}</span>`).join('');
+}
+function stopListHtml(next, interactive){
+  const lo = !!data.listOnly;
+  return `<div class="card"><p class="lbl">All stops${interactive ? ' · tap one to make it next' : ''}</p>` + data.stops.map((s,i) => `${lo ? '<div class="lrow">' : ''}
+    <button class="stop ${CLS[s.status] || 'open'}" ${interactive && s.status===OPEN ? `onclick="skipTo='${s.id}';render();window.scrollTo(0,0)"` : ''}>
+      <div class="n">${MARK[s.status] || (i+1)}</div>
+      <div><div class="who">${esc(s.address)}${interactive && next && s.id===next.id ? ' <span class="pill new">next</span>' : ''}${s.found ? ' <span class="pill wait">found</span>' : ''}</div><div class="a">${esc(s.grab)}${s.status !== OPEN ? ' · ' + esc(s.status.toLowerCase()) : ''}${s.notes ? ' · ' + esc(s.notes) : ''}${s.driverNote ? '<br>Your note: ' + esc(s.driverNote) : ''}</div></div>
+    </button>${lo ? (s.status === OPEN ? `<a class="go" href="${mapsLink(s)}" target="_blank" rel="noopener">Go ↗</a>` : '') + '</div>' : ''}`).join('') + `</div>`;
+}
+function bannerHtml(){
+  const pull = window.pullListHtml(data.area);
+  const how = data.listOnly
+    ? `<b>How this works.</b> Go to each address below. Tap <b>Go</b> next to an address for driving directions. Tapping stops is optional, but it helps us see what is done.
+      <p style="margin:8px 0 2px"><b>Signs to pick up</b> at each stop:</p>${pull}`
+    : `<b>How this works</b><ol style="margin:6px 0 0;padding-left:18px">
+      <li>Drive every street inside the blue line, plus the border roads.</li>
+      <li>Tap <b>Start driving</b> for spoken turns, or go in the street order below. Orange glow on a street means more signs there.</li>
+      <li>Pull every one of these signs you see, on your list or not:${pull}</li></ol>`;
+  return (data.test ? `<div class="note"><b>Practice route.</b> Nothing here is real. Try anything you like.</div>` : '')
+    + `<div class="card small">${how}
+      ${data.notes ? '<br>' + esc(data.notes) : ''}</div>`;
+}
+function renderNameGate(){
+  $('#howwrap').innerHTML = bannerHtml();
+  $('#app').innerHTML = `<div class="card"><p class="lbl">Before you start</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><label for="nf">First name</label><input id="nf" autocomplete="given-name" value="${esc(oldFirstName())}"></div>
+      <div><label for="nl">Last name</label><input id="nl" autocomplete="family-name"></div></div>
+    <label for="np">Cell phone</label><input id="np" type="tel" inputmode="tel" autocomplete="tel" placeholder="651-555-0123">
+    <div class="acts" style="grid-template-columns:1fr"><button class="btn" id="startBtn">Start</button></div>
+    <p class="small muted" style="margin-top:10px">Your name goes on every stop you mark, so the organizers can tell who picked up what. Your number is only for them, to reach you about your route. You enter this once on this phone.</p></div>`
+    + (data.listOnly ? stopListHtml(null, false) : streetsHtml());
+  const start = async () => {
+    const first = $('#nf').value.trim(), last = $('#nl').value.trim(), phone = $('#np').value.trim();
+    if(!first || !last){ toast('Type your first and last name'); (first ? $('#nl') : $('#nf')).focus(); return; }
+    if(phone.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '').length !== 10){ toast('Type a 10-digit phone number'); $('#np').focus(); return; }
+    const btn = $('#startBtn'); btn.disabled = true; btn.textContent = 'One moment…';
+    try {
+      const { ok, j } = await send({ action:'hello', first, last, phone });
+      if(!ok || !j || !j.volunteer){ toast((j && j.error) || 'Could not save. Try again.'); return; }
+      setVol(j.volunteer); render();
+    } catch(e) { console.error('hello', e); toast('No signal. Nothing was saved, tap Start again.'); }
+    finally { if(document.body.contains(btn)){ btn.disabled = false; btn.textContent = 'Start'; } }
+  };
+  $('#startBtn').addEventListener('click', start);
+  ['#nf','#nl','#np'].forEach(id => $(id).addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); start(); } }));
+}
+function foundHtml(){
+  if(!foundOpen) return `<div class="center"><button class="btn soft" id="fopen">+ Found one not on my list</button></div>`;
+  const row = (k, label) => `<div class="cnt"><span>${label}</span><input id="fc_${k}" type="number" inputmode="numeric" min="0" max="20" value="0" aria-label="${label} signs"></div>`;
+  return `<div class="card"><p class="lbl">Found a sign not on your list</p>
+    <label for="fw">Where</label><input id="fw" maxlength="200" placeholder="e.g. 1400 block of Pine St, or the corner of 15th and Vermillion">
+    <label>How many of each</label>
+    <div class="cnts">${row('jen','Jen Fox')}${row('zuzek','Zuzek')}${row('kinneman','Kinneman')}${row('larson','Larson')}${row('other','Other')}</div>
+    <label for="fn">Note (optional)</label><input id="fn" maxlength="500" placeholder="e.g. large sign, left the stake">
+    <div class="acts"><button class="btn ok" id="fgo">Log it</button><button class="btn ghost" id="fcancel">Cancel</button></div></div>`;
+}
+function printSheet(){
+  if(!data || !data.stops.length){ toast('Nothing to print yet.'); return; }
+  openSheets([{ route: data.route, area: data.area, volunteer: data.volunteer || '', stops: data.stops, expectExtra: data.expectExtra }]);
+}
+// Area routes (30 Oct): the streets in the order the loop reaches them, tap to tick off (kept on this phone).
+function ticks(){ try { return new Set(JSON.parse(localStorage.getItem('jfs_st_' + token) || '[]')); } catch { return new Set(); } }
+function saveTicks(s){ try { localStorage.setItem('jfs_st_' + token, JSON.stringify([...s])); } catch {} }
+// Ticked streets by name, for the map (they turn green) and the campaign's progress view.
+function tickedNames(){ const order = (turfData && window.streetOrder) ? window.streetOrder(turfData) : []; const t = ticks(); return new Set(order.filter(o => t.has(o.n)).map(o => o.name)); }
+let tickQueue = { sAdd: new Set(), sRemove: new Set() }, tickTimer = null;
+async function sendTicks(){
+  tickTimer = null;
+  const sAdd = [...tickQueue.sAdd], sRemove = [...tickQueue.sRemove];
+  if(!sAdd.length && !sRemove.length) return;
+  tickQueue = { sAdd: new Set(), sRemove: new Set() };
+  try {
+    const r = await fetch('/api/route', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'coverage', token, sAdd, sRemove }) });
+    if(!r.ok) throw new Error('status ' + r.status);
+  } catch(e) { sAdd.forEach(n => { if(!tickQueue.sRemove.has(n)) tickQueue.sAdd.add(n); }); sRemove.forEach(n => { if(!tickQueue.sAdd.has(n)) tickQueue.sRemove.add(n); }); tickTimer = setTimeout(sendTicks, 20000); }
+}
+function tick(n){
+  const s = ticks(), on = !s.has(n); on ? s.add(n) : s.delete(n); saveTicks(s);
+  const o = ((turfData && window.streetOrder) ? window.streetOrder(turfData) : []).find(x => x.n === n);
+  if(o){ if(on){ tickQueue.sAdd.add(o.name); tickQueue.sRemove.delete(o.name); } else { tickQueue.sRemove.add(o.name); tickQueue.sAdd.delete(o.name); } clearTimeout(tickTimer); tickTimer = setTimeout(sendTicks, 1500); }
+  if(turfApi && turfApi.restyle) turfApi.restyle();
+  render();
+}
+function streetsHtml(){
+  const order = (turfData && window.streetOrder) ? window.streetOrder(turfData) : [];
+  if(!order.length) return '';
+  const done = ticks();
+  return `<div class="card"><p class="lbl">Streets in order (${order.length}) · tap one when it's done</p><div class="strs">`
+    + order.map(o => `<button class="str${done.has(o.n) ? ' on' : ''}" onclick="tick(${o.n})"><b>${o.n}</b>${esc(o.name)}</button>`).join('') + `</div></div>`;
+}
+function render(){
+  const open = data.stops.filter(s => s.status === OPEN);
+  const back = data.stops.filter(s => s.status === 'Picked up').reduce((t, s) => t + s.count, 0);
+  $('#title').textContent = data.route + ' · ' + (data.area || 'your route');
+  $('#sub').textContent = open.length ? `${open.length} stop${open.length===1?'':'s'} left · ${back} sign${back===1?'':'s'} picked up` : `All ${data.stops.length} stops done · ${back} sign${back===1?'':'s'} picked up`;
+  $('#howwrap').innerHTML = bannerHtml();
+  if(!data.listOnly){
+    const sg = data.stops.reduce((t, s) => t + (s.count || 0), 0), lg = data.stops.reduce((t, s) => t + (s.large || 0), 0);
+    const ex = data.expectExtra || 0;
+    $('#sub').textContent = ex ? `Expect about ${sg + ex} signs${lg ? ', ' + lg + ' large' : ''} · ${sg} on your list + about ${ex} from other DFL campaigns (estimate)` : `About ${sg} sign${sg === 1 ? '' : 's'} to pick up${lg ? ', ' + lg + ' large' : ''}`;
+  }
+  if(!myVol()){ renderNameGate(); return; }
+  if(!data.listOnly){
+    $('#app').innerHTML = streetsHtml() + foundHtml()
+      + `<p class="small muted center"><button class="btn ghost sm" onclick="printSheet()">Print this sheet</button></p>`
+      + `<p class="small muted center">Signed in as ${esc(myName())} · <button class="btn ghost" style="padding:0" onclick="setVol(null);lastAction=null;render()">not you?</button></p>`;
+    bindFound(); return;
+  }
+  const next = (skipTo && open.find(s => s.id === skipTo)) || open[0];
+  let h = '';
+  const undo = lastAction ? `<div class="center" style="margin-top:8px"><button class="btn ghost" onclick="act('${lastAction.stopId}','undo')">Undo last</button></div>` : '';
+  if(next){
+    const idx = data.stops.indexOf(next) + 1;
+    h += `<div class="next"><p class="lbl">Next stop · ${idx} of ${data.stops.length}</p>
+      <div class="name">${esc(next.address)}</div>
+      ${next.unit ? `<div class="note"><b>${esc(next.unit)}</b> · apartment, check near the entrance.</div>` : ''}
+      <p class="lbl" style="margin:10px 0 6px">Pick up</p><div class="chips">${chips(next)}</div>
+      ${next.notes ? `<div class="note" style="margin-top:10px"><b>Heads up:</b> ${esc(next.notes)}</div>` : ''}
+      <a class="nav" style="margin-top:12px" href="${mapsLink(next)}" target="_blank" rel="noopener">Navigate ↗</a>
+      <label for="dn" style="margin-top:12px">Note for the organizers (optional)</label>
+      <div class="noterow"><input id="dn" maxlength="500" placeholder="e.g. only found one, stake left in ground" value="${esc(next.driverNote)}"><button class="btn ghost notebtn" onclick="act('${next.id}','note')">Save</button></div>
+      <div class="acts" style="grid-template-columns:1fr"><button class="btn ok" onclick="act('${next.id}','picked')">Picked up</button></div>
+      <div class="acts" style="margin-top:8px"><button class="btn no" onclick="act('${next.id}','nosign')">No sign there</button><button class="btn soft" onclick="act('${next.id}','keeping')">Homeowner keeping it</button></div>
+      ${undo}
+    </div>`;
+  } else {
+    h += `<div class="done"><b>Route complete</b>Thanks, ${esc(myName().split(' ')[0])}. The organizers can already see it.${undo}</div>`;
+  }
+  h += foundHtml() + stopListHtml(next, true)
+    + `<p class="small muted center"><button class="btn ghost sm" onclick="printSheet()">Print this sheet</button></p>`
+    + `<p class="small muted center">Signed in as ${esc(myName())} · <button class="btn ghost" style="padding:0" onclick="setVol(null);lastAction=null;render()">not you?</button></p>`;
+  $('#app').innerHTML = h;
+  if(turfApi) turfApi.drawPins();
+  bindFound();
+}
+function bindFound(){
+  // Bound in script, not inline, so nothing resolves against a form control by accident.
+  const fo = $('#fopen'); if(fo) fo.addEventListener('click', () => { foundOpen = true; render(); try { $('#fw').focus(); } catch {} });
+  const fg = $('#fgo'); if(fg) fg.addEventListener('click', logFound);
+  const fc = $('#fcancel'); if(fc) fc.addEventListener('click', () => { foundOpen = false; render(); });
+}
+load().catch(() => { $('#app').innerHTML = '<div class="err">Could not load the route. Check your connection and reload.</div>'; });
+</script>
+</body>
+</html>
