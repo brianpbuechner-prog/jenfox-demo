@@ -86,8 +86,8 @@ T["tblBWpDTx9YWJ6qFf"] = [
 # --- Team tasks: sample rows only --------------------------------------------------
 K = dict(title="fldqM8qt9ShxvHmL0", owner="fldgxbUIV3uc36uXK", due="fldCatBPXl5X1CcEM", status="fldpdxEYd4AE6nJVC", category="fldEgxuEqs76U1WpO")
 T["tbl3WFideiZxmt7i0"] = [
-    rec(0, "TSK", {K["title"]: "Reconcile November deposits against the bank statement", K["owner"]: "Jackie", K["due"]: "2026-11-20", K["status"]: "Not started", K["category"]: "Compliance"}),
-    rec(1, "TSK", {K["title"]: "Pay final vendor invoices before year-end", K["owner"]: "Jackie", K["due"]: "2026-12-15", K["status"]: "Not started", K["category"]: "Compliance"}),
+    rec(0, "TSK", {K["title"]: "Reconcile November deposits against the bank statement", K["owner"]: "Treasurer", K["due"]: "2026-11-20", K["status"]: "Not started", K["category"]: "Compliance"}),
+    rec(1, "TSK", {K["title"]: "Pay final vendor invoices before year-end", K["owner"]: "Treasurer", K["due"]: "2026-12-15", K["status"]: "Not started", K["category"]: "Compliance"}),
 ]
 for t in ("tblnDmOlehtIR85w1", "tblSpH5A5Z1lVKM0J", "tbl5up3C7Qv60g9Bt"):
     T[t] = []

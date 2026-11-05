@@ -104,7 +104,7 @@ export const FIXED_DEADLINES: FixedDeadline[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Rolling deadlines Jackie starts from a date.
+// Rolling deadlines the treasurer starts from a date.
 // `business` counts business days (weekends and the holidays below skipped);
 // otherwise calendar days.
 // ---------------------------------------------------------------------------
@@ -214,7 +214,7 @@ export const isIsoDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(
 // Added 2026-10-21, second pass: money totals, limits, after-election checklist, mileage.
 // ---------------------------------------------------------------------------
 
-/** Committee totals Jackie enters after each filing. Totals only, never donors. */
+/** Committee totals the treasurer enters after each filing. Totals only, never donors. */
 export const MONEY_TABLE = "tblBWpDTx9YWJ6qFf";
 export const MF = {
   label: "fld33WHwjDV1tR3k5",

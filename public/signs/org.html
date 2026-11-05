@@ -177,9 +177,9 @@ function notDriven(r){
 const real = () => D.routes.filter(r => r.kind !== 'Test');
 const digits = p => String(p || '').replace(/\D/g, '').slice(-10);
 const firstName = n => String(n || '').trim().split(/[\s&,]+/)[0] || '';
-// Section a route sits in: its Group if set (Bob, Jessie), otherwise the town most of its stops are in.
+// Section a route sits in: its Group if set (a driver with several routes), otherwise the town most of its stops are in.
 const section = r => r.kind === 'Test' ? 'Practice' : (r.group || r.town || 'Other');
-const SECTION_ORDER = ['Hastings', 'Cottage Grove', 'Bob', 'Jessie'];
+const SECTION_ORDER = ['Hastings', 'Cottage Grove'];
 const secRank = s => { const i = SECTION_ORDER.indexOf(s); return i < 0 ? (s === 'Practice' ? 99 : 50) : i; };
 // One color per state, used on the map and the route cards.
 function stateOf(r){
@@ -192,7 +192,7 @@ function stateOf(r){
   if(!r.linkSent) return { key:'unsent', label:'Link not sent', color:'#A4581C' };
   return { key:'sent', label:'Link sent', color:'#6B6B6B' };
 }
-// People, not routes: Bob and Jessie each get one text with both of their links.
+// People, not routes: a driver with several routes gets one text with both of their links.
 function people(){
   const by = new Map();
   for (const r of real()) {

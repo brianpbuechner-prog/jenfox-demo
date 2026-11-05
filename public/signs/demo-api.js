@@ -2,7 +2,8 @@
 // It answers the app's /api/* calls in the browser from made-up data, so nothing reaches a server
 // and nothing real is shown. Every household, address, person and phone number below is fictional.
 (function () {
-  const KEY = 'signs_demo_state_v1';
+  const realFetch = window.fetch.bind(window);
+  const KEY = 'signs_demo_state_v2';
   const now = Date.now();
   const iso = minsAgo => new Date(now - minsAgo * 60000).toISOString();
 
@@ -61,6 +62,13 @@
         large: stops.reduce((t, s) => t + s.large, 0), stops,
       });
     });
+    // A1: a drive-every-street area. The outline and streets are public map data for part of Hastings;
+    // the sign spots that make the orange glow are made up.
+    const SPOTS = [[44.72872, -92.87713], [44.7169, -92.88858], [44.71682, -92.8884], [44.7168, -92.88847], [44.72593, -92.89377], [44.7221, -92.89044], [44.72192, -92.89044], [44.72203, -92.89045], [44.72962, -92.87706], [44.72321, -92.88647], [44.72314, -92.88652], [44.72288, -92.88601], [44.72523, -92.88869], [44.72512, -92.88895], [44.72172, -92.89251], [44.72171, -92.89239], [44.72152, -92.89256], [44.72444, -92.88756], [44.72419, -92.88776], [44.72375, -92.8899], [44.72373, -92.88953], [44.73132, -92.87687], [44.73104, -92.87704], [44.73127, -92.87712], [44.72074, -92.88758], [44.72246, -92.88215], [44.72278, -92.882], [44.72271, -92.88194], [44.73027, -92.88176], [44.73047, -92.88183], [44.7311, -92.87721]];
+    const a1 = SPOTS.map((c, i) => ({ id: 'a' + i, sid: '', address: 'Sample stop', mapsAddress: '', unit: '', status: 'To pick up', grab: '1 Jen Fox',
+      items: [{ label: 'Jen Fox', count: 1, large: 0 }], count: 1, large: 0, notes: '', driverNote: '', found: false, by: '', lat: c[0], lng: c[1] }));
+    routes.push({ id: 'rt5', route: 'A1', kind: '', group: '', town: 'Hastings', area: 'Hastings, west side (drive every street)', status: 'Open', turf: true,
+      volunteer: 'Sam Volunteer', phone: '651-555-0190', phoneGuess: '', phoneGuessFrom: '', linkSent: iso(60 * 20), token: 'demo5', lastAt: '', lastBy: '', coverage: null, large: 0, stops: a1 });
     // Some progress already made on R1 so the dashboards have something to show.
     const r1 = routes[0];
     r1.stops.slice(0, 5).forEach((s, i) => { s.status = i === 3 ? 'Keeping it' : 'Picked up'; s.by = VOLS[0].name; });
@@ -113,7 +121,7 @@
   function routeView(token) {
     const r = S.routes.find(x => x.token === token) || S.routes[0];
     tally(r);
-    return { route: r.route, area: r.area, listOnly: true, test: true, notes: 'Bring the signs to the drop-off garage by 3 pm.', volunteer: r.volunteer, expectExtra: 0, coverage: null, stops: r.stops };
+    return { route: r.route, area: r.area, listOnly: !r.turf, test: true, notes: 'Bring the signs to the drop-off garage by 3 pm.', volunteer: r.volunteer, expectExtra: 0, coverage: null, stops: r.stops };
   }
   const reply = (body, status = 200) => Promise.resolve(new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }));
   const STATUS = { picked: 'Picked up', nosign: 'No sign there', keeping: 'Keeping it' };
@@ -122,7 +130,11 @@
     const url = new URL(path, location.origin);
     const p = url.pathname;
     if (p === '/api/auth') return reply(method === 'GET' ? { signedIn: true } : { ok: true });
-    if (p === '/api/turf' || p === '/api/map') return reply({ error: 'Not in the demo' }, 404);
+    if (p === '/api/turf') {
+      if (url.searchParams.get('route') === 'A1') return realFetch('/signs/demo-turf-A1.json');
+      return reply({ error: 'No area map for this route' }, 404);
+    }
+    if (p === '/api/map') return reply({ error: 'Not in the demo' }, 404);
     if (p === '/api/signup' || p === '/api/volunteer') return reply({ ok: true, demo: true });
     if (p === '/api/org') {
       if (method === 'GET') return reply(orgView());
@@ -166,14 +178,13 @@
     return null;
   }
 
-  const realFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
     const url = typeof input === 'string' ? input : input && input.url;
     if (url && (url.startsWith('/api/') || url.startsWith(location.origin + '/api/'))) {
       const method = ((init && init.method) || 'GET').toUpperCase();
       let body = null; try { body = init && init.body ? JSON.parse(init.body) : null; } catch {}
       const res = handle(url, method, body);
-      if (res) return new Promise(ok => setTimeout(() => ok(res), 250)).then(x => x);
+      if (res) return new Promise(ok => setTimeout(() => ok(res), 250));
     }
     return realFetch(input, init);
   };

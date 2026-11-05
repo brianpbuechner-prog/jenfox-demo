@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/signs/delivery/demo-api.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Your sign route · Jen Fox for 41B</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap">
+<link rel="stylesheet" href="/signs/delivery/app.css">
+<script src="/signs/delivery/sheet.js" defer></script>
+</head>
+<body>
+<div class="demo-strip">Portfolio demo of the yard sign app, delivery edition (Aug to Oct). Every household, address and name here is made up, and nothing you tap is saved beyond this browser tab. <a href="/signs">All screens</a> · <a href="/">Team site</a></div>
+<div class="bar"><div class="in"><div class="eyebrow">Jen Fox for 41B · yard signs</div><h1 id="title">Loading your route…</h1><div class="sub" id="sub"></div></div></div>
+<div class="wrap" id="app"><div class="card muted">One moment.</div></div>
+<div class="toast" id="toast"></div>
+<script>
+const token = location.pathname.split('/').pop();
+let data = null, lastAction = null, skipTo = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1800)}
+// Who is tapping. Set once by the name + phone gate; the id ties every tap to one Volunteers record.
+function myVol(){ try { const v = JSON.parse(localStorage.getItem('jfs_vol') || 'null'); return v && v.id && v.name ? v : null; } catch { return null; } }
+function myName(){ const v = myVol(); return v ? v.name : ''; }
+function setVol(v){ try { if(v){ localStorage.setItem('jfs_vol', JSON.stringify(v)); localStorage.setItem('jfs_name', v.name); } else localStorage.removeItem('jfs_vol'); } catch {} }
+function oldFirstName(){ try { return (localStorage.getItem('jfs_name') || '').trim().split(/\s+/)[0] || ''; } catch { return ''; } }
+
+async function load(){
+  const r = await fetch('/api/route?token=' + encodeURIComponent(token));
+  const j = await r.json();
+  if(!r.ok){ $('#title').textContent = 'This link is not active'; $('#app').innerHTML = `<div class="card">${esc(j.error||'')}</div>`; return; }
+  data = j; render();
+}
+async function act(signId, action){
+  // Belt and braces: nothing is markable without a name, and the API refuses it too.
+  if(action !== 'undo' && !myVol()){ toast('Enter your name and phone first'); render(); return; }
+  const btns = [...document.querySelectorAll('.acts .btn, .notebtn')]; btns.forEach(b => b.disabled = true);
+  // The note box belongs to the stop card, so it only exists when the action is about that stop.
+  const box = $('#dn');
+  const note = (box && action !== 'undo') ? box.value.trim() : undefined;
+  if(action === 'note' && !note && !(data.stops.find(s => s.id === signId) || {}).driverNote){ toast('Type a note first'); btns.forEach(b => b.disabled = false); return; }
+  try {
+    const r = await fetch('/api/route', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token, signId, action, by: myName(), vid: (myVol() || {}).id, ...(note !== undefined ? { note } : {}) }) });
+    let j = null; try { j = await r.json(); } catch { j = null; }
+    if(!r.ok){ toast((j && j.error) || 'Could not save. Try again.'); return; }
+    data = j; lastAction = action === 'undo' ? null : action === 'note' ? lastAction : { signId, action }; if(action !== 'note') skipTo = null;
+    const withNote = note ? ', note saved' : '';
+    toast(action === 'delivered' ? 'Marked delivered' + withNote : action === 'declined' ? 'Marked declined' + withNote : action === 'note' ? (note ? 'Note saved' : 'Note cleared') : 'Undone');
+    render();
+  } catch(e) {
+    // Phone drops signal mid-tap: say so and give the buttons back instead of leaving them dead.
+    console.error('act', e);
+    toast('No signal. Nothing was saved, tap it again.');
+  } finally {
+    btns.forEach(b => { b.disabled = false; });
+  }
+}
+function mapsLink(s){
+  const a = (s.mapsAddress || s.address || '').replace(/,?\s*$/, ''); // street address only, no apartment
+  return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + encodeURIComponent(a + ', MN');
+}
+function stopListHtml(next, interactive){
+  return `<div class="card"><p class="lbl">All stops${interactive ? ' · tap one to make it next' : ''}</p>` + data.stops.map((s,i) => `
+    <button class="stop ${esc(s.status)}" ${interactive && s.status==='Needs delivery' ? `onclick="skipTo='${s.id}';render();window.scrollTo(0,0)"` : ''}>
+      <div class="n">${s.status==='Delivered'?'✓':s.status==='Declined'?'–':s.status==='Hold'?'!':i+1}</div>
+      <div><div class="who">${esc(s.name)}${interactive && next && s.id===next.id ? ' <span class="pill new">next</span>' : ''}</div><div class="a">${esc(s.address)}${s.status==='Hold' ? ' · DO NOT DELIVER' : ''}${s.notes ? ' · ' + esc(s.notes) : ''}${s.driverNote ? '<br>Note: ' + esc(s.driverNote) : ''}</div></div>
+    </button>`).join('') + `</div>`;
+}
+function renderNameGate(){
+  // No volunteer yet: the route is read-only. You can see the stops, you cannot mark any of them.
+  $('#app').innerHTML = `<div class="card"><p class="lbl">Before you start</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><label for="nf">First name</label><input id="nf" autocomplete="given-name" value="${esc(oldFirstName())}"></div>
+      <div><label for="nl">Last name</label><input id="nl" autocomplete="family-name"></div></div>
+    <label for="np">Cell phone</label><input id="np" type="tel" inputmode="tel" autocomplete="tel" placeholder="651-555-0123">
+    <div class="acts" style="grid-template-columns:1fr"><button class="btn" id="startBtn">Start</button></div>
+    <p class="small muted" style="margin-top:10px">Your name goes on every stop you mark, so the sign organizers can tell who delivered what. Your number is only for them, to reach you about your route. You enter this once on this phone.</p></div>`
+    + stopListHtml(null, false);
+  const start = async () => {
+    const first = $('#nf').value.trim(), last = $('#nl').value.trim(), phone = $('#np').value.trim();
+    if(!first || !last){ toast('Type your first and last name'); (first ? $('#nl') : $('#nf')).focus(); return; }
+    if(phone.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '').length !== 10){ toast('Type a 10-digit phone number'); $('#np').focus(); return; }
+    const btn = $('#startBtn'); btn.disabled = true; btn.textContent = 'One moment\u2026';
+    try {
+      const r = await fetch('/api/route', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'hello', token, first, last, phone }) });
+      let j = null; try { j = await r.json(); } catch { j = null; }
+      if(!r.ok || !j || !j.volunteer){ toast((j && j.error) || 'Could not save. Try again.'); return; }
+      setVol(j.volunteer); render();
+    } catch(e) {
+      console.error('hello', e);
+      toast('No signal. Nothing was saved, tap Start again.');
+    } finally {
+      if(document.body.contains(btn)){ btn.disabled = false; btn.textContent = 'Start'; }
+    }
+  };
+  $('#startBtn').addEventListener('click', start);
+  ['#nf','#nl','#np'].forEach(id => $(id).addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); start(); } }));
+  try { $(oldFirstName() ? '#nl' : '#nf').focus(); } catch {}
+}
+// Paper backup of this route: same map and checklist the organizer prints.
+function printSheet(){
+  if(!data || !data.stops.length){ toast('Nothing to print yet.'); return; }
+  openSheets([{ route: data.route, area: data.area, volunteer: myName() || data.volunteer || '', stops: data.stops }]);
+}
+function render(){
+  const open = data.stops.filter(s => s.status === 'Needs delivery');
+  const delivered = data.stops.filter(s => s.status === 'Delivered').length;
+  $('#title').textContent = data.route + ' · ' + (data.area || 'your route');
+  $('#sub').textContent = open.length ? `${open.length} stop${open.length===1?'':'s'} left · ${delivered} delivered` : `All ${data.stops.length} stops done · ${delivered} delivered`;
+  if(!myVol()){ renderNameGate(); return; }
+  const next = (skipTo && open.find(s => s.id === skipTo)) || open[0];
+  let h = '';
+  if(next){
+    const idx = data.stops.indexOf(next) + 1;
+    h += `<div class="next"><p class="lbl">Next stop · ${idx} of ${data.stops.length}</p>
+      <div class="name">${esc(next.name)}</div><div class="addr">${esc(next.address)}</div>
+      ${next.unit ? `<div class="note"><b>${esc(next.unit)}</b> · apartment, not a yard.</div>` : ''}
+      <div class="small muted" style="margin-bottom:8px">${next.size ? 'Sign size ' + esc(next.size) : ''}${next.rebar ? ' · rebar' : ''}${next.phone ? ' · <a href="tel:' + esc(next.phone) + '">' + esc(next.phone) + '</a>' : ''}</div>
+      ${next.notes ? `<div class="note"><b>From the organizers:</b> ${esc(next.notes)}</div>` : ''}
+      <a class="nav" href="${mapsLink(next)}" target="_blank" rel="noopener">Navigate ↗</a>
+      <label for="dn" style="margin-top:12px">Note for the organizers (optional)</label>
+      <div class="noterow"><input id="dn" maxlength="500" placeholder="e.g. nobody home, left it by the garage" value="${esc(next.driverNote)}"><button class="btn ghost notebtn" onclick="act('${next.id}','note')">Save</button></div>
+      <p class="small muted" style="margin:4px 0 0">Saves with Delivered or Declined too, so you can skip the Save button.</p>
+      <div class="acts"><button class="btn ok" onclick="act('${next.id}','delivered')">Delivered</button><button class="btn no" onclick="act('${next.id}','declined')">Declined / no one home</button></div>
+      ${lastAction ? `<div class="center" style="margin-top:8px"><button class="btn ghost" onclick="act('${lastAction.signId}','undo')">Undo last</button></div>` : ''}
+    </div>`;
+  } else {
+    h += `<div class="done"><b>Route complete</b>Thanks, ${esc(myName().split(' ')[0])}. The organizers can already see it.${lastAction ? ` <div style="margin-top:8px"><button class="btn ghost" onclick="act('${lastAction.signId}','undo')">Undo last</button></div>` : ''}</div>`;
+  }
+  h += stopListHtml(next, true)
+    + `<p class="small muted center"><button class="btn ghost sm" onclick="printSheet()">Print this sheet</button></p>`
+    + `<p class="small muted center">Signed in as ${esc(myName())} · <button class="btn ghost" style="padding:0" onclick="setVol(null);lastAction=null;render()">not you?</button></p>`;
+  $('#app').innerHTML = h;
+}
+load().catch(() => { $('#app').innerHTML = '<div class="err">Could not load the route. Check your connection and reload.</div>'; });
+</script>
+</body>
+</html>

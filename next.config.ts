@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
       { source: "/signs", destination: "/signs/index.html" },
       { source: "/signs/", destination: "/signs/index.html" },
       { source: "/signs/r/:token", destination: "/signs/route.html" },
+      { source: "/signs/delivery/r/:token", destination: "/signs/delivery/route.html" },
     ];
   },
 };

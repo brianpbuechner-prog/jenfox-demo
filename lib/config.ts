@@ -97,12 +97,12 @@ export const ELECTION = {
 export const CHOICES = {
   raisedBy: ["Brian", "Jen"],
   ideaStatus: ["Idea", "Proposed", "Agreed", "In progress", "Done", "Declined"],
-  taskOwner: ["Brian", "Jen", "Jackie"],
+  taskOwner: ["Brian", "Jen", "Treasurer"],
   taskStatus: ["Not started", "In progress", "Done"],
   taskCategory: ["General", "Newsletter", "Signs", "Data", "Compliance"],
   issueStatus: ["Draft", "Scheduled", "Sent"],
   invoiceStatus: ["Sent", "Paid"],
-  snapshotUpdatedBy: ["Brian", "Jen", "Jackie"],
+  snapshotUpdatedBy: ["Brian", "Jen", "Treasurer"],
 };
 
 // Quick links on Home. Update freely, these are not Airtable-backed.

@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script src="/signs/delivery/demo-api.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Yard signs · Jen Fox for 41B</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap">
+<link rel="stylesheet" href="/signs/delivery/app.css">
+<script src="/signs/delivery/sheet.js" defer></script>
+</head>
+<body>
+<div class="demo-strip">Portfolio demo of the yard sign app, delivery edition (Aug to Oct). Every household, address and name here is made up, and nothing you tap is saved beyond this browser tab. <a href="/signs">All screens</a> · <a href="/">Team site</a></div>
+<div class="bar"><div class="in" id="hdr"><div class="eyebrow">Jen Fox for 41B</div><h1>Yard signs</h1><div class="sub" id="sub">Loading…</div></div></div>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+let D = null, view = 'home', openRoute = null, busy = false, editNote = null, q = '', editVol = null;
+const $ = s => document.querySelector(s);
+// Find any sign, whatever its status, by name, address, phone or S-number. Every word typed has to appear somewhere.
+const norm = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function findSigns(text){
+  const words = norm(text).split(' ').filter(Boolean);
+  if(!words.length) return [];
+  const digits = String(text).replace(/\D/g, '');
+  return (D.all || []).filter(s => {
+    const hay = norm([s.name, s.address, s.sid].join(' ')) + ' ' + String(s.phone).replace(/\D/g, '');
+    return words.every(w => hay.includes(w)) || (digits.length >= 4 && String(s.phone).replace(/\D/g, '').includes(digits));
+  }).slice(0, 30);
+}
+function renderSearch(){
+  const box = $('#results'); if(!box) return;
+  const hits = findSigns(q);
+  if(!q.trim()){ box.innerHTML = ''; return; }
+  if(!hits.length){ box.innerHTML = `<div class="addr" style="margin-top:10px">No sign matches "${esc(q.trim())}". Try just the last name or the street.</div>`; return; }
+  const pill = s => s.flagged ? '<span class="pill warn">needs a look</span>'
+    : s.status==='Delivered' ? '<span class="pill good">Delivered</span>'
+    : s.status==='Needs delivery' ? '<span class="pill new">To deliver</span>'
+    : s.status==='Declined' ? '<span class="pill warn">Declined</span>'
+    : s.status==='Hold' ? '<span class="pill bad">Hold</span>'
+    : `<span class="pill wait">${esc(s.status || 'No status')}</span>`;
+  box.innerHTML = hits.map(s => `<div class="row" style="display:block">
+      <div class="who">${esc(s.name)} ${pill(s)} ${s.route ? `<button class="pill new" style="border:0;cursor:pointer;font-family:inherit" onclick="openRoute=${s.routeIdx};view='route';render();scrollTo(0,0)">${esc(s.route)} ›</button>` : ''}</div>
+      <div class="addr">${esc(s.address)}${s.size ? ' · ' + esc(s.size) : ''}${s.phone ? ' · <a href="tel:' + esc(s.phone) + '">' + esc(s.phone) + '</a>' : ''}</div>
+      <div class="addr">${s.by ? esc(s.status.toLowerCase()) + ' by ' + esc(s.by) + (s.date ? ' ' + esc(s.date) : '')
+        : s.legacy ? 'Marked ' + esc(s.status.toLowerCase()) + ' on the old sheet before the app. Nobody logged it here, so treat that as unconfirmed.'
+        : s.status==='Needs delivery' && !s.route ? 'Not on a route yet' : ''}</div>
+      ${s.notes ? `<div class="small muted"><b>For the driver:</b> ${esc(s.notes)}</div>` : ''}
+      ${s.driverNote ? `<div class="small"><b>Driver wrote:</b> ${esc(s.driverNote)}</div>` : ''}
+      <div class="tools" style="margin-top:6px;align-items:center"><span class="small muted">Status</span>
+        <select aria-label="Status" onchange="post({action:'setStatus',signId:'${s.id}',status:this.value},this.value==='Needs delivery'?'Back on the list. Routing it now.':'Updated')" style="width:auto;padding:6px 8px;font-size:.8rem">${['Needs delivery','Delivered','Declined','Hold','No sign'].map(o => `<option ${o===s.status?'selected':''}>${o}</option>`).join('')}</select></div>
+    </div>`).join('');
+}
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
+const today = () => new Date('2026-10-01T17:00:00Z').toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' }); // demo: delivery weeks
+
+async function boot(){
+  const a = await (await fetch('/api/auth')).json();
+  if(!a.signedIn) return signIn(a.clientId);
+  await refresh();
+}
+function signIn(clientId){
+  $('#sub').textContent = 'Organizer sign-in';
+  $('#app').innerHTML = `<div class="card center"><p class="lbl">Organizers</p><p class="small muted" style="margin:0 0 14px">Sign in with the Gmail address on the organizer list. Volunteers don't sign in; they use their route link.</p><div id="gbtn" style="display:flex;justify-content:center"></div><p class="err" id="autherr" style="display:none;margin-top:12px"></p></div>`;
+  const tryRender = () => {
+    if(!window.google || !google.accounts){ setTimeout(tryRender, 150); return; }
+    google.accounts.id.initialize({ client_id: clientId, callback: async (resp) => {
+      const r = await fetch('/api/auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ credential: resp.credential }) });
+      const j = await r.json();
+      if(!r.ok){ const e=$('#autherr'); e.style.display='block'; e.textContent = j.error; return; }
+      await refresh();
+    }});
+    google.accounts.id.renderButton($('#gbtn'), { theme:'outline', size:'large', text:'signin_with', shape:'pill' });
+  };
+  tryRender();
+}
+async function refresh(){
+  const r = await fetch('/api/org');
+  if(r.status === 401) return boot();
+  D = await r.json(); render();
+  if(D.routePass && (D.routePass.routed?.length || D.routePass.flagged?.length)) toast(`${D.routePass.routed.length} new signup${D.routePass.routed.length===1?'':'s'} routed${D.routePass.flagged.length ? ', ' + D.routePass.flagged.length + ' need a look' : ''}`);
+}
+async function post(body, okMsg){
+  if(busy) return false;
+  busy = true;
+  // Every button goes flat while the request is out, so a click always looks like it did something.
+  const btns = [...document.querySelectorAll('#app button, #hdr button')];
+  btns.forEach(b => b.disabled = true);
+  toast('Working\u2026');
+  try {
+    const r = await fetch('/api/org', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    let j = null; try { j = await r.json(); } catch { j = null; }
+    if(!r.ok){ toast((j && j.error) || ('Could not save (' + r.status + '). Try again.')); return false; }
+    D = j; toast(okMsg || 'Saved');
+    try { render(); } catch(e) { console.error('render', e); }
+    return true;
+  } catch(e) {
+    // A dropped connection used to leave busy stuck true, which killed every button on the page silently.
+    console.error('post', e);
+    toast('Could not reach the server. Nothing was saved, try again.');
+    return false;
+  } finally {
+    busy = false;
+    btns.forEach(b => { b.disabled = false; });
+  }
+}
+function link(r){ return location.origin + '/signs/delivery/r/' + r.token; }
+async function copy(text, msg){ try { await navigator.clipboard.writeText(text); toast(msg || 'Copied'); } catch { prompt('Copy this link:', text); } }
+
+function render(){
+  if(view === 'route') return renderRoute();
+  if(view === 'add') return renderAdd();
+  if(view === 'vols') return renderVols();
+  const t = D.totals;
+  $('#hdr').innerHTML = `<div class="eyebrow">Jen Fox for 41B · ${esc(D.who.name.split(' ')[0])}</div><h1>Yard signs</h1><div class="sub">${today()}</div>`;
+  let h = `<div class="stats"><div class="stat"><b>${t.exceptions}</b><span>Need a decision</span></div><div class="stat"><b>${t.needs}</b><span>To deliver</span></div><div class="stat"><b>${t.delivered}</b><span>Delivered</span></div></div>`;
+  h += `<div class="card"><p class="lbl">Find a sign</p><input id="q" type="search" autocomplete="off" placeholder="Name, address, phone or S-number" value="${esc(q)}"><p class="small muted" style="margin:6px 0 0">Every sign, including the ones already delivered. Change the status here to put a missed one back on the list.</p><div id="results" style="margin-top:8px"></div></div>`;
+  if(D.exceptions.length){
+    h += `<div class="card" style="border-color:var(--warn)"><p class="lbl" style="color:var(--warn)">Needs a decision</p>` + D.exceptions.map(e => `
+      <div class="row" style="display:block">
+        <div class="who">${esc(e.name)} <span class="pill warn">${esc(e.kind)}</span></div>
+        <div class="addr">${esc(e.address)}${e.phone ? ' · <a href="tel:' + esc(e.phone) + '">' + esc(e.phone) + '</a>' : ''}${e.email ? ' · ' + esc(e.email) : ''}</div>
+        <div class="small" style="margin:6px 0 8px">${esc(e.why)}${e.notes ? '<br><span class="muted">Note on signup: ' + esc(e.notes) + '</span>' : ''}</div>
+        ${e.kind === 'Address not mappable' ? `
+          <div style="display:grid;grid-template-columns:90px 1fr;gap:8px"><input id="h_${e.id}" placeholder="House #" inputmode="numeric" value="${esc(e.house)}"><input id="s_${e.id}" placeholder="Street, e.g. Olson Dr" value="${esc(e.street)}"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><input id="u_${e.id}" placeholder="Apt / unit" value="${esc(e.unit)}">
+          <select id="c_${e.id}"><option>Hastings</option><option>Cottage Grove</option><option>Denmark Twp</option><option>Other</option></select></div>
+          <div class="acts"><button class="btn ok" onclick="post({action:'fixAddress',signId:'${e.id}',house:$('#h_${e.id}').value,street:$('#s_${e.id}').value,unit:$('#u_${e.id}').value,city:$('#c_${e.id}').value},'Saved. Routing it now.')">Save address</button><button class="btn no" onclick="post({action:'decide',signId:'${e.id}',choice:'drop'},'Dropped')">Drop it</button></div>`
+        : `<div class="acts"><button class="btn ok" onclick="post({action:'decide',signId:'${e.id}',choice:'deliver'},'Added to a route')">${e.kind==='Possible duplicate'?'Deliver again':'Deliver anyway'}</button><button class="btn no" onclick="post({action:'decide',signId:'${e.id}',choice:'drop'},'Dropped')">${e.kind==='Possible duplicate'?'Skip, already has one':'Drop it'}</button></div>`}
+      </div>`).join('') + `</div>`;
+  }
+  if((D.driverNotes || []).length){
+    h += `<div class="card"><p class="lbl">Notes from drivers</p>` + D.driverNotes.map(n => `<div class="row" style="display:block">
+      <div class="who">${esc(n.name)} ${n.route ? `<span class="pill new">${esc(n.route)}</span>` : ''} ${n.status && n.status !== 'Delivered' ? `<span class="pill ${n.status==='Declined'?'warn':'wait'}">${esc(n.status)}</span>` : ''}</div>
+      <div class="addr">${esc(n.address)}${n.by ? ' · ' + esc(n.by) + (n.date ? ' ' + esc(n.date) : '') : ''}</div>
+      <div class="small" style="margin-top:4px">${esc(n.note)}</div></div>`).join('') + `</div>`;
+  }
+  const VS = D.volunteers;
+  if(VS && !VS.error){
+    const people = VS.volunteers.filter(v => v.delivered || v.declined).length + VS.unlinked.length;
+    const miles = [...VS.volunteers, ...VS.unlinked].reduce((t, v) => t + v.miles, 0);
+    h += `<button class="route" onclick="view='vols';render();scrollTo(0,0)"><div class="top"><span>Volunteers</span><span>›</span></div>
+      <div class="meta">${people} ${people===1?'person has':'people have'} delivered · about ${Math.round(miles)} miles${VS.unlinked.length ? ` · <span class="pill warn">${VS.unlinked.length} name${VS.unlinked.length===1?'':'s'} to match</span>` : ''}</div></button>`;
+  }
+  h += `<div class="tools"><button class="btn soft sm" onclick="view='add';render()">+ Add a signup by hand</button><button class="btn soft sm" onclick="printSheets()">Print route sheets</button><button class="btn ghost sm" onclick="refresh()">Refresh</button></div>`;
+  h += `<p class="lbl" style="margin:6px 0 -4px 4px">Routes</p>` + D.routes.map((r,i) => `<button class="route" onclick="openRoute=${i};view='route';render();scrollTo(0,0)">
+      <div class="top"><span>${esc(r.route)} · ${esc(r.area)}</span><span>${r.delivered} / ${r.total}</span></div>
+      <div class="meter"><i style="width:${r.total ? 100*r.closed/r.total : 0}%"></i></div>
+      <div class="meta">${r.status==='Complete' ? '<span class="pill good">Complete</span>' : r.volunteer ? 'With ' + esc(r.volunteer) : '<span class="pill warn">Needs a volunteer</span>'}${r.closed - r.delivered ? ` · ${r.closed - r.delivered} declined` : ''}</div>
+    </button>`).join('');
+  h += `<div class="card" style="margin-top:14px"><p class="lbl">New signups this week, added automatically</p>` + (D.recent.length ? D.recent.map(s => `<div class="row"><div><div class="who">${esc(s.name)}</div><div class="addr">${esc(s.address)} · ${new Date(s.created).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>${s.flagged ? '<span class="pill warn">needs a look</span>' : s.route ? `<span class="pill new">→ ${esc(s.route)}</span>` : s.status==='Needs delivery' ? '<span class="pill wait">routing…</span>' : `<span class="pill good">${esc(s.status)}</span>`}</div>`).join('') : '<div class="addr">Nothing new this week. Signups from the form show up here on their own.</div>') + `</div>`;
+  h += `<p class="small muted center" style="margin-top:12px"><button class="btn ghost" onclick="fetch('/api/auth',{method:'DELETE'}).then(()=>location.reload())">Sign out</button></p>`;
+  $('#app').innerHTML = h;
+  // Bound in script, not inline: an inline handler on a form control resolves names against the control first.
+  $('#q').addEventListener('input', e => { q = e.target.value; renderSearch(); });
+  renderSearch();
+}
+// One sheet per route, map and checklist, built in the page by /sheet.js. Pass an index for a single route.
+function printSheets(i){
+  const rs = (i === undefined ? D.routes : [D.routes[i]]).filter(r => r && r.stops.length);
+  if(!rs.length){ toast('Nothing to print: no stops on ' + (i === undefined ? 'any route' : 'this route') + '.'); return; }
+  openSheets(rs, i === undefined ? 'all open routes' : '');
+}
+function renderRoute(){
+  const r = D.routes[openRoute];
+  $('#hdr').innerHTML = `<button class="back" onclick="view='home';render();scrollTo(0,0)">‹ All routes</button><h1>${esc(r.route)} · ${esc(r.area)}</h1><div class="sub">${r.volunteer ? esc(r.volunteer) + ' has this route' : 'No volunteer yet'} · ${r.delivered} of ${r.total} delivered</div>`;
+  $('#app').innerHTML = `
+    <div class="card"><p class="lbl">Volunteer link</p><div class="mono">${esc(link(r))}</div>
+      <p class="small muted" style="margin:6px 0 10px">Opens only this route. No sign-in. Text it to whoever is delivering.</p>
+      <div class="tools"><button class="btn soft sm" onclick="copy(link(r_()),'Link copied. Text it to ${esc(r.volunteer || 'the volunteer')}.')">Copy link</button>
+      <a class="btn soft sm" style="text-decoration:none;display:inline-block" href="sms:?&body=${encodeURIComponent('Here is your Jen Fox yard sign route: ' + link(r))}">Text it</a>
+      <button class="btn no sm" onclick="if(confirm('The old link will stop working. Continue?'))post({action:'newLink',routeId:'${r.id}'},'New link made. The old one is dead.')">New link</button></div></div>
+    <div class="card"><p class="lbl">Who has it</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="vn" placeholder="Volunteer name" value="${esc(r.volunteer)}"><input id="vp" placeholder="Their phone" value="${esc(r.phone)}"></div>
+      <div class="tools" style="margin-top:8px"><button class="btn soft sm" onclick="post({action:'setVolunteer',routeId:'${r.id}',volunteer:$('#vn').value,phone:$('#vp').value},'Saved')">Save</button><button class="btn soft sm" onclick="printSheets(openRoute)">Print this sheet</button>${r.status !== 'Complete' && r.total === r.closed && r.total ? '' : ''}<button class="btn ghost sm" onclick="if(confirm('Archive this route? Its stops stay on the list but the link stops working.'))post({action:'archiveRoute',routeId:'${r.id}'},'Archived').then(()=>{view='home';render()})">Archive route</button></div></div>
+    <div class="card"><p class="lbl">Stops, in driving order</p><p class="small muted" style="margin:-4px 0 10px">"For the driver" shows on their phone at that stop. "Driver wrote" is what they typed back.</p>` + r.stops.map((s,i) => `
+      <div class="stop ${esc(s.status)}" style="cursor:default;align-items:flex-start">
+        <div class="n">${s.status==='Delivered'?'✓':s.status==='Declined'?'–':s.status==='Hold'?'!':i+1}</div>
+        <div style="flex:1;min-width:0"><div class="who">${esc(s.name)}</div><div class="a">${esc(s.address)}${s.size ? ' · ' + esc(s.size) : ''}${s.deliveredBy ? ' · ' + esc(s.status.toLowerCase()) + ' by ' + esc(s.deliveredBy) + (s.date ? ' ' + esc(s.date) : '') : ''}</div>
+          ${editNote === s.id
+            ? `<div class="noterow" style="margin-top:6px"><input id="en_${s.id}" maxlength="500" placeholder="e.g. by the mailbox, dog in yard" value="${esc(s.notes)}"><button class="btn soft sm" onclick="post({action:'setNote',signId:'${s.id}',notes:$('#en_${s.id}').value},'Saved. The driver sees it at that stop.').then(ok=>{if(ok){editNote=null;render()}})">Save</button><button class="btn ghost sm" onclick="editNote=null;render()">Cancel</button></div>`
+            : `<div class="a">${s.notes ? '<b>For the driver:</b> ' + esc(s.notes) + ' ' : ''}<button class="btn ghost" style="padding:0;font-size:.8rem" onclick="editNote='${s.id}';render();try{$('#en_${s.id}').focus()}catch{}">${s.notes ? 'edit' : '+ note for the driver'}</button></div>`}
+          ${s.driverNote ? `<div class="a" style="color:var(--ink)"><b>Driver wrote:</b> ${esc(s.driverNote)}</div>` : ''}</div>
+        <select aria-label="Status" onchange="post({action:'setStatus',signId:'${s.id}',status:this.value},'Updated')" style="width:auto;padding:6px 8px;font-size:.8rem">${['Needs delivery','Delivered','Declined','Hold'].map(o => `<option ${o===s.status?'selected':''}>${o}</option>`).join('')}</select>
+      </div>`).join('') + `</div>`;
+}
+function renderAdd(){
+  $('#hdr').innerHTML = `<button class="back" onclick="view='home';render()">‹ Back</button><h1>Add a signup</h1><div class="sub">For requests that came by phone, text, or Facebook</div>`;
+  $('#app').innerHTML = `<div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>First name</label><input id="af"></div><div><label>Last name</label><input id="al"></div></div>
+    <div style="display:grid;grid-template-columns:100px 1fr;gap:8px"><div><label>House #</label><input id="ah" inputmode="numeric"></div><div><label>Street</label><input id="as" placeholder="e.g. Ramsey St"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Apt / unit</label><input id="au" placeholder="e.g. 4B"></div><div><label>City</label><select id="ac"><option>Hastings</option><option>Cottage Grove</option><option>Denmark Twp</option><option>Other</option></select></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label>Phone</label><input id="ap" inputmode="tel"></div><div><label>Sign size</label><select id="az"><option>S</option><option>L</option></select></div></div>
+    <label>Email</label><input id="ae" inputmode="email">
+    <label>Notes for the volunteer</label><input id="an" placeholder="e.g. by the mailbox, gate on the side">
+    <div class="acts" style="grid-template-columns:1fr"><button class="btn" onclick="post({action:'addSign',first:$('#af').value,last:$('#al').value,house:$('#ah').value,street:$('#as').value,unit:$('#au').value,city:$('#ac').value,phone:$('#ap').value,email:$('#ae').value,size:$('#az').value,notes:$('#an').value},'Added and routed').then(ok=>{if(ok){view='home';render()}})">Add and route it</button></div>
+  </div>`;
+}
+const r_ = () => D.routes[openRoute];
+// Volunteers: who delivered what, with contact info. Stats come from /api/org (api/_lib/volunteers.js).
+const sizeText = z => Object.entries(z).sort((a,b) => b[1]-a[1]).map(([k,n]) => `${n} ${k==='?' ? 'no size' : k}`).join(', ');
+const shortDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '';
+function volStats(v){
+  return `<div class="stats" style="margin-top:8px"><div class="stat"><b>${v.delivered}</b><span>Signs</span></div><div class="stat"><b>${v.routes}</b><span>Routes</span></div><div class="stat"><b>${v.miles ? '~' + Math.round(v.miles) : 0}</b><span>Est. miles</span></div></div>
+    <div class="addr" style="margin-top:6px">${[v.declined ? v.declined + ' declined' : '', v.days ? v.days + ' day' + (v.days===1?'':'s') + ' out' : '', v.lastOut ? 'last ' + shortDate(v.lastOut) : '', sizeText(v.sizes), v.routeNames.length ? 'on ' + v.routeNames.join(', ') : ''].filter(Boolean).map(esc).join(' · ')}</div>`;
+}
+function renderVols(){
+  const VS = D.volunteers || {};
+  $('#hdr').innerHTML = `<button class="back" onclick="view='home';editVol=null;render();scrollTo(0,0)">‹ Back</button><h1>Volunteers</h1><div class="sub">Who delivered what, and how to reach them</div>`;
+  if(VS.error){ $('#app').innerHTML = `<div class="err">Could not work out volunteer numbers: ${esc(VS.error)}</div>`; return; }
+  const vols = VS.volunteers || [], un = VS.unlinked || [];
+  const opts = vols.map(v => `<option value="${esc(v.id)}">${esc(v.name)}</option>`).join('');
+  let h = '';
+  if(un.length){
+    h += `<div class="card" style="border-color:var(--warn)"><p class="lbl" style="color:var(--warn)">Names to match</p><p class="small muted" style="margin:-4px 0 6px">Typed on a route page before the app asked for phone numbers. Match each one to a person, or add them as a new volunteer.</p>` + un.map((v,i) => `
+      <div class="row" style="display:block"><div class="who">${esc(v.name)}</div>${volStats(v)}
+        ${vols.length ? `<div class="tools" style="margin-top:8px;align-items:center"><select id="lk_${i}" aria-label="Same person as" style="width:auto;flex:1;min-width:0;padding:8px"><option value="">Same person as…</option>${opts}</select><button class="btn soft sm" onclick="if(!$('#lk_${i}').value){toast('Pick who it is first');return}post({action:'linkName',volunteerId:$('#lk_${i}').value,name:${esc(JSON.stringify(v.name))}},'Matched')">Match</button></div>` : ''}
+        <div class="tools" style="margin-top:8px"><input id="nn_${i}" placeholder="Full name" value="${esc(v.name)}" style="flex:1;min-width:0"><input id="np_${i}" inputmode="tel" placeholder="Phone" style="flex:1;min-width:0"><button class="btn soft sm" onclick="post({action:'saveVolunteer',name:$('#nn_${i}').value,phone:$('#np_${i}').value,alias:${esc(JSON.stringify(v.name))}},'Added')">New volunteer</button></div>
+      </div>`).join('') + `</div>`;
+  }
+  h += `<div class="card"><p class="lbl">Volunteers</p>` + (vols.length ? vols.map(v => `
+    <div class="row" style="display:block">
+      ${editVol === v.id
+        ? `<div class="tools"><input id="en" value="${esc(v.name)}" placeholder="Full name" style="flex:1;min-width:0"><input id="ep" value="${esc(v.phone)}" inputmode="tel" placeholder="Phone" style="flex:1;min-width:0"></div>
+           <div class="tools" style="margin-top:8px"><button class="btn soft sm" onclick="post({action:'saveVolunteer',id:'${v.id}',name:$('#en').value,phone:$('#ep').value},'Saved').then(ok=>{if(ok){editVol=null;render()}})">Save</button><button class="btn ghost sm" onclick="editVol=null;render()">Cancel</button></div>`
+        : `<div class="who">${esc(v.name)} <button class="btn ghost" style="padding:0;font-size:.8rem" onclick="editVol='${v.id}';render()">edit</button></div>
+           <div class="addr">${v.phone ? `<a href="tel:${esc(v.phone)}">${esc(v.phone)}</a>` : 'No phone yet'}</div>`}
+      ${volStats(v)}
+      ${v.aliases.length ? `<div class="small muted" style="margin-top:4px">Also counts: ${v.aliases.map(a => `${esc(a)} <button class="btn ghost" style="padding:0 4px;font-size:.8rem" aria-label="Stop counting ${esc(a)}" onclick="post({action:'unlinkName',volunteerId:'${v.id}',name:${esc(JSON.stringify(a))}},'Unmatched')">×</button>`).join(' ')}</div>` : ''}
+    </div>`).join('') : '<div class="addr">Nobody yet. Volunteers are added the first time they open a route link and enter their name and phone.</div>') + `</div>`;
+  h += `<div class="card"><p class="lbl">Add a volunteer</p><div class="tools"><input id="an2" placeholder="Full name" style="flex:1;min-width:0"><input id="ap2" inputmode="tel" placeholder="Phone" style="flex:1;min-width:0"><button class="btn soft sm" onclick="post({action:'saveVolunteer',name:$('#an2').value,phone:$('#ap2').value},'Added')">Add</button></div></div>`;
+  h += `<p class="small muted" style="margin:0 4px">Miles are an estimate: straight-line distance between each person's stops on a day, times ${VS.roadFactor || 1.3} for roads. They leave out the drive to the first stop and home. Before Sep 11 the app did not record which route a stop was on, so each day out before then counts as one route.${VS.unnamedDelivered ? ` ${VS.unnamedDelivered} delivered signs have no name on them (old sheet or set by an organizer), so they are not counted here.` : ''}</p>`;
+  $('#app').innerHTML = h;
+}
+boot().catch(e => { $('#app').innerHTML = '<div class="err">Could not load. Check your connection and reload.</div>'; console.error(e); });
+</script>
+</body>
+</html>

@@ -109,8 +109,8 @@ export default async function Treasurer({ searchParams }: { searchParams: Promis
   const cash = latest(moneyRows, "cash"), raised = latest(moneyRows, "raised"), spend = latest(moneyRows, "campaignSpending");
   const subsidy = latest(moneyRows, "subsidy"), special = latest(moneyRows, "specialSources"), party = latest(moneyRows, "partyUnits");
   const checked = new Set(rows.filter((r) => r.kind === "Fixed" && r.status === "Done").map((r) => r.key));
-  // Jackie's tasks: anything assigned to her, plus open Compliance tasks with no owner.
-  const jackieTasks = tasks.filter((t) => t.status !== "Done" && (t.owner === "Jackie" || (t.category === "Compliance" && !t.owner)));
+  // Treasurer tasks: anything assigned to the treasurer, plus open Compliance tasks with no owner.
+  const jackieTasks = tasks.filter((t) => t.status !== "Done" && (t.owner === "Treasurer" || (t.category === "Compliance" && !t.owner)));
 
   // Fixed deadlines: hide the ones whose date has passed and that were checked off.
   const fixed = FIXED_DEADLINES.map((f) => {
@@ -133,7 +133,7 @@ export default async function Treasurer({ searchParams }: { searchParams: Promis
       <div className="page-head">
         <div>
           <h1>Treasurer</h1>
-          <div className="sub">Jackie&apos;s page: deadlines with countdowns, a contribution check, money against the limits, her tasks and the CFB tools. Dates from the CFB 2026 calendar and candidate handbook, counted in Central time.</div>
+          <div className="sub">The treasurer&apos;s page: deadlines with countdowns, a contribution check, money against the limits, open tasks and the CFB tools. Dates from the CFB 2026 calendar and candidate handbook, counted in Central time.</div>
         </div>
       </div>
 
@@ -391,9 +391,9 @@ export default async function Treasurer({ searchParams }: { searchParams: Promis
       <div className="grid two" style={{ marginBottom: 18 }} id="tools">
         <section className="card dl-section" style={{ marginBottom: 0 }}>
           <div className="eyebrow">From the Tasks list</div>
-          <h2>Jackie&apos;s tasks</h2>
+          <h2>Treasurer tasks</h2>
           {jackieTasks.length === 0 ? (
-            <div className="attn-clear">No open tasks for Jackie.</div>
+            <div className="attn-clear">No open treasurer tasks.</div>
           ) : (
             <ul className="tr-tasks">
               {jackieTasks.map((t) => {
