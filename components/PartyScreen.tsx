@@ -16,7 +16,7 @@ import type { WallPost } from "@/lib/partyPosts";
 // by itself; /party/control on Brian's phone can force any state. It never calls the race.
 
 type Mode = "countdown" | "closed" | "movie" | "tracker";
-type Card = { id: number; size: "full" | "corner"; chime: ChimeKind; kicker: string; title: string; lines: string[] };
+type Card = { id: number; size: "full" | "corner"; chime: ChimeKind; kicker: string; title: string; lines: string[]; ms?: number };
 type View = {
   mode: Feed["mode"]; names: { d: string; r: string }; totals: { d: number; r: number };
   reportedCount: number; totalCount: number; precincts: FeedPrecinct[];
@@ -115,7 +115,7 @@ export default function PartyScreen({ sim, screen }: { sim: boolean; screen: boo
     const before = Date.now() < POLLS_CLOSE_UTC;
     if (!sim) {
       if (before) store.clear();
-      else trig.current = store.get() || emptyTrig();
+      else trig.current = emptyTrig(); // demo: start fresh on every visit
     }
     if (sim || before) setMode("countdown");
     else { closedFired.current = true; setMode("tracker"); }
@@ -143,7 +143,7 @@ export default function PartyScreen({ sim, screen }: { sim: boolean; screen: boo
   useEffect(() => {
     if (!card) return;
     // A precinct card shortens to 10 seconds when two or more cards are waiting behind it.
-    const ms = card.size === "corner" && queue.current.length >= 2 ? CARD_MS / 2 : CARD_MS;
+    const ms = card.ms ?? (card.size === "corner" && queue.current.length >= 2 ? CARD_MS / 2 : CARD_MS);
     const t = setTimeout(() => setCard(null), ms);
     return () => clearTimeout(t);
   }, [card]);
@@ -317,10 +317,14 @@ export default function PartyScreen({ sim, screen }: { sim: boolean; screen: boo
       st.ms.add("all");
       cards.push({ size: "full", chime: "big", kicker: `${total} of ${total}`, title: "All precincts reporting", lines: [`${view.names.d} ${n(view.totals.d)}`, `${view.names.r} ${n(view.totals.r)}`] });
     }
-    if (cards.length) {
-      enqueue(cards);
-      if (!sim) store.set(st);
+    // Portfolio demo: the feed is the final result, so skip the night's build-up. Show only the
+    // all-in card, 5 seconds after the page opens, for 5 seconds. Not remembered, so every visit sees it.
+    if (!sim) {
+      const all = cards.find((c) => c.title === "All precincts reporting");
+      if (all) setTimeout(() => enqueue([{ ...all, ms: 5_000 }]), 5_000);
+      return;
     }
+    if (cards.length) enqueue(cards);
   }, [view, mode, sim, enqueue]);
 
   // ---- message wall ------------------------------------------------------------------------
