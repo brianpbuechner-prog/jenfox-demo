@@ -3,7 +3,7 @@
 // and nothing real is shown. Every household, address, person and phone number below is fictional.
 (function () {
   const realFetch = window.fetch.bind(window);
-  const KEY = 'signs_demo_state_v2';
+  const KEY = 'signs_demo_state_v3';
   const now = Date.now();
   const iso = minsAgo => new Date(now - minsAgo * 60000).toISOString();
 
@@ -62,20 +62,28 @@
         large: stops.reduce((t, s) => t + s.large, 0), stops,
       });
     });
-    // A1: a drive-every-street area. The outline and streets are public map data for part of Hastings;
-    // the sign spots that make the orange glow are made up.
-    const SPOTS = [[44.72872, -92.87713], [44.7169, -92.88858], [44.71682, -92.8884], [44.7168, -92.88847], [44.72593, -92.89377], [44.7221, -92.89044], [44.72192, -92.89044], [44.72203, -92.89045], [44.72962, -92.87706], [44.72321, -92.88647], [44.72314, -92.88652], [44.72288, -92.88601], [44.72523, -92.88869], [44.72512, -92.88895], [44.72172, -92.89251], [44.72171, -92.89239], [44.72152, -92.89256], [44.72444, -92.88756], [44.72419, -92.88776], [44.72375, -92.8899], [44.72373, -92.88953], [44.73132, -92.87687], [44.73104, -92.87704], [44.73127, -92.87712], [44.72074, -92.88758], [44.72246, -92.88215], [44.72278, -92.882], [44.72271, -92.88194], [44.73027, -92.88176], [44.73047, -92.88183], [44.7311, -92.87721]];
-    const a1 = SPOTS.map((c, i) => ({ id: 'a' + i, sid: '', address: 'Sample stop', mapsAddress: '', unit: '', status: 'To pick up', grab: '1 Jen Fox',
-      items: [{ label: 'Jen Fox', count: 1, large: 0 }], count: 1, large: 0, notes: '', driverNote: '', found: false, by: '', lat: c[0], lng: c[1] }));
-    routes.push({ id: 'rt5', route: 'A1', kind: '', group: '', town: 'Hastings', area: 'Hastings, west side (drive every street)', status: 'Open', turf: true,
-      volunteer: 'Sam Volunteer', phone: '651-555-0190', phoneGuess: '', phoneGuessFrom: '', linkSent: iso(60 * 20), token: 'demo5', lastAt: '', lastBy: '', coverage: null, large: 0, stops: a1 });
-    // Some progress already made on R1 so the dashboards have something to show.
+    // Drive-every-street areas: the same 18 areas as the real pickup (outlines and streets are public
+    // map data); the sign spots, volunteers and progress are made up. See demo-areas.js.
+    const AR = window.DEMO_AREAS || [];
+    AR.forEach((A, ai) => {
+      const stops = A.spots.map((c, i) => ({ id: A.route + '-' + i, sid: '', address: 'Sample stop', mapsAddress: '', unit: '',
+        status: i < A.picked ? 'Picked up' : 'To pick up', grab: '1 Jen Fox', items: [{ label: 'Jen Fox', count: 1, large: 0 }], count: 1, large: 0,
+        notes: '', driverNote: '', found: false, by: i < A.picked ? A.vol : '', lat: c[0], lng: c[1] }));
+      const town = A.route === 'DEN' ? 'Rural' : A.town;
+      const started = A.done.length > 0;
+      routes.push({ id: 'ar' + ai, route: A.route, kind: '', group: '', town, area: A.route === 'DEN' ? 'Denmark Township, rural roads' : town + ', area ' + A.route,
+        status: started && A.picked >= stops.length ? 'Complete' : 'Open', turf: true,
+        volunteer: A.vol, phone: A.vol ? '651-555-0' + String(150 + ai) : '', phoneGuess: '', phoneGuessFrom: '',
+        linkSent: A.vol ? iso(60 * 20) : '', token: A.route === 'P17' ? 'demo5' : 'area-' + A.route,
+        lastAt: started ? iso(15 + ai * 9) : '', lastBy: started ? A.vol : '',
+        coverage: started ? { p: [], s: [], raw: A.done, at: iso(15 + ai * 9) } : null, large: 0, stops });
+    });
+    // Two address-list routes remain alongside the areas, as in the real pickup.
+    routes.splice(1, 2);
     const r1 = routes[0];
     r1.stops.slice(0, 5).forEach((s, i) => { s.status = i === 3 ? 'Keeping it' : 'Picked up'; s.by = VOLS[0].name; });
     r1.stops[1].driverNote = 'Sign was by the garage, stake left in the ground';
     r1.lastAt = iso(12); r1.lastBy = VOLS[0].name;
-    routes[1].stops.slice(0, 2).forEach(s => { s.status = 'Picked up'; s.by = VOLS[1].name; });
-    routes[1].lastAt = iso(95); routes[1].lastBy = VOLS[1].name;
     return {
       routes, all,
       signups: [
@@ -103,7 +111,10 @@
     r.closed = r.stops.filter(s => s.status !== 'To pick up').length;
     r.large = r.stops.reduce((t, s) => t + (s.large || 0), 0);
   }
+  // Ticked street names are matched in their short form, which turfmap.js defines.
+  const shortCov = r => { if (r.coverage && r.coverage.raw) { const sn = window.streetShortName || (x => x); r.coverage.s = [...new Set(r.coverage.raw.map(sn))]; } };
   function orgView() {
+    S.routes.forEach(shortCov);
     S.routes.forEach(tally);
     const stops = S.routes.flatMap(r => r.stops);
     const back = stops.filter(s => s.status === 'Picked up').reduce((t, s) => t + s.count, 0);
@@ -120,8 +131,9 @@
   }
   function routeView(token) {
     const r = S.routes.find(x => x.token === token) || S.routes[0];
+    shortCov(r);
     tally(r);
-    return { route: r.route, area: r.area, listOnly: !r.turf, test: true, notes: 'Bring the signs to the drop-off garage by 3 pm.', volunteer: r.volunteer, expectExtra: 0, coverage: null, stops: r.stops };
+    return { route: r.route, area: r.area, listOnly: !r.turf, test: true, notes: 'Bring the signs to the drop-off garage by 3 pm.', volunteer: r.volunteer, expectExtra: 0, coverage: r.coverage || null, stops: r.stops };
   }
   const reply = (body, status = 200) => Promise.resolve(new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }));
   const STATUS = { picked: 'Picked up', nosign: 'No sign there', keeping: 'Keeping it' };
@@ -131,7 +143,8 @@
     const p = url.pathname;
     if (p === '/api/auth') return reply(method === 'GET' ? { signedIn: true } : { ok: true });
     if (p === '/api/turf') {
-      if (url.searchParams.get('route') === 'A1') return realFetch('/signs/demo-turf-A1.json');
+      const rt = url.searchParams.get('route') || '';
+      if ((window.DEMO_AREAS || []).some(a => a.route === rt)) return realFetch('/signs/turf/' + encodeURIComponent(rt) + '.json');
       return reply({ error: 'No area map for this route' }, 404);
     }
     if (p === '/api/map') return reply({ error: 'Not in the demo' }, 404);

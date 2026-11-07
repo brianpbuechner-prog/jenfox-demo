@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script src="/signs/demo-areas.js"></script>
 <script src="/signs/demo-api.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -221,7 +222,7 @@ function render(){
   const R = real(), out = R.filter(isActive).length;
   const AR = R.filter(r => turfMeta[r.route]), cs = AR.map(cov).filter(Boolean);
   const drMi = cs.reduce((a, c) => a + c.mi, 0), totMi = cs.reduce((a, c) => a + c.total, 0), doneAreas = cs.filter(c => c.pct >= 95).length;
-  $('#hdr').innerHTML = `<div class="eyebrow">Jen Fox for 41B · ${esc(firstName(D.who.name))}</div><h1>Sign pickup</h1><div class="sub">${today()} · pickup is Wednesday, Nov 4</div>`;
+  $('#hdr').innerHTML = `<div class="eyebrow">Jen Fox for 41B · ${esc(firstName(D.who.name))}</div><h1>Sign pickup</h1><div class="sub">Wednesday, Nov 4 · pickup day</div>`;
   // Demo: address-list routes only, so the area-sweep tiles become stop tiles.
   $('#stats').innerHTML = AR.length ? `<div class="stats"><div class="stat"><b>${out}</b><span>Routes out now</span></div><div class="stat"><b>${totMi ? Math.round(100 * drMi / totMi) + '%' : '…'}</b><span>Streets driven${totMi ? ` · ${drMi.toFixed(0)} of ${totMi.toFixed(0)} mi` : ''}</span></div><div class="stat"><b>${doneAreas}<small> / ${AR.length || '…'}</small></b><span>Areas done</span></div></div>`
     : `<div class="stats"><div class="stat"><b>${out}</b><span>Routes out now</span></div><div class="stat"><b>${t.done}<small> / ${t.stops}</small></b><span>Stops marked</span></div><div class="stat"><b>${t.signsBack}</b><span>Signs back</span></div></div>`;
